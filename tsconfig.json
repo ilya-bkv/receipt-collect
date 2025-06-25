@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "typeRoots": [
+      "./node_modules/@types",
+      "./node_modules/telegram-webapps",
+    ]
+  },
+  "include": [
+    "node_modules/telegram-webapps/src/index.d.ts",
+  ],
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ],
+}
