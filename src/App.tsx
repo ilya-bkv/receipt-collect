@@ -1,23 +1,55 @@
-import reactLogo from './assets/react.svg'
 import './App.css'
+import { Stack, PinInput, Text } from '@mantine/core';
+import { useState } from 'react';
+import { ReceiptUploader } from './components/ReceiptUploader.tsx';
 
 function App() {
+  Telegram.WebApp.ready();
+  const [pin, setPin] = useState<string>('');
+  const [isValid, setIsValid] = useState<boolean | null>(null);
 
-  Telegram.WebApp.ready()
+  const handlePinChange = (value: string) => {
+    setPin(value);
+
+    if (value.length === 4) {
+      setIsValid(value === '1010');
+    } else {
+      setIsValid(null);
+    }
+  };
+
   return (
     <>
-      <div>
-
-
-        <img src={reactLogo} className="logo react" alt="React logo"/>
-
-      </div>
-      <h1>
-        Hello {Telegram.WebApp.initDataUnsafe.user?.username}</h1>
-
-      <p className="read-the-docs">
-        ....
-      </p>
+      <Stack
+        h={300}
+        bg="var(--mantine-color-body)"
+        align="stretch"
+        justify="center"
+        gap="md"
+      >
+        {(isValid === null || !isValid) && (
+          <>
+            <Text size="lg">
+              Hello {Telegram.WebApp.initDataUnsafe.user?.username}, enter the PIN
+            </Text>
+            <PinInput
+              size="md"
+              placeholder="?"
+              type="number"
+              length={4}
+              value={pin}
+              onChange={handlePinChange}
+              error={isValid === false}
+            />
+          </>
+        )}
+        {isValid === false && (
+          <Text c="red" ta="center">Invalid PIN. Please try again.</Text>
+        )}
+        {isValid === true && (
+          <ReceiptUploader/>
+        )}
+      </Stack>
     </>
   )
 }
