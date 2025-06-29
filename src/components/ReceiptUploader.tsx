@@ -73,7 +73,7 @@ export const ReceiptUploader = () => {
         {
           headers: {
             'accept': 'application/json',
-            'apikey': 'import.meta.env.VITE_API_KEY'
+            'apikey': import.meta.env.VITE_API_KEY
           }
         }
       );
@@ -137,7 +137,7 @@ export const ReceiptUploader = () => {
             <Table withColumnBorders withTableBorder striped>
               {Object.entries(receiptData).map(([key, value]) => (
                 <Table.Tr key={key}>
-                  <Table.Td>{key}</Table.Td>
+                  <Table.Td><b>{key}</b></Table.Td>
                   <Table.Td>
                     {typeof value === 'object' && value !== null
                       ? JSON.stringify(value, null, 2)
