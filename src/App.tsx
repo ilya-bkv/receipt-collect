@@ -12,7 +12,7 @@ function App() {
     setPin(value);
 
     if (value.length === 4) {
-      setIsValid(value === '1010');
+      setIsValid(value === import.meta.env.VITE_PIN_CODE);
     } else {
       setIsValid(null);
     }
