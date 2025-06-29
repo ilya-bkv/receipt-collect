@@ -1,10 +1,9 @@
 import './App.css'
 import { Stack, PinInput, Text } from '@mantine/core';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ReceiptUploader } from './components/ReceiptUploader.tsx';
 
 function App() {
-  Telegram.WebApp.ready();
   const [pin, setPin] = useState<string>('');
   const [isValid, setIsValid] = useState<boolean | null>(null);
 
@@ -17,6 +16,12 @@ function App() {
       setIsValid(null);
     }
   };
+
+  useEffect(() => {
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
+    Telegram.WebApp.lockOrientation();
+  }, []);
 
   return (
     <>
