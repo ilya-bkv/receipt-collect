@@ -3,6 +3,7 @@ import { Stack, PinInput, Text } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { ReceiptUploader } from './components/ReceiptUploader.tsx';
 
+
 function App() {
   const [pin, setPin] = useState<string>('');
   const [isValid, setIsValid] = useState<boolean | null>(null);
@@ -26,12 +27,12 @@ function App() {
   return (
     <>
       <Stack
-        h={300}
         bg="var(--mantine-color-body)"
         align="stretch"
         justify="center"
         gap="md"
       >
+        <img src="/logo.png" alt="Logo" style={{ width: '100px', margin: '0 auto' }} />
         {(isValid === null || !isValid) && (
           <>
             <Text size="lg">
