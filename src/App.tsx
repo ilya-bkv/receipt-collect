@@ -1,12 +1,15 @@
 import './App.css'
-import { Stack, PinInput, Text } from '@mantine/core';
+import { Stack, PinInput, Text, Title, Button } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { ReceiptUploader } from './components/ReceiptUploader.tsx';
-
+import { useTonConnectUI } from '@tonconnect/ui-react';
 
 function App() {
   const [pin, setPin] = useState<string>('');
   const [isValid, setIsValid] = useState<boolean | null>(null);
+  const [isTonConnected, setIsTonConnected] = useState(false);
+
+  const [tonConnectUI] = useTonConnectUI();
 
   const handlePinChange = (value: string) => {
     setPin(value);
@@ -24,14 +27,46 @@ function App() {
     Telegram.WebApp.lockOrientation();
   }, []);
 
+  useEffect(() => {
+    if (tonConnectUI.connected && tonConnectUI.wallet) {
+      setIsTonConnected(true);
+    }
+
+    const unsubscribe = tonConnectUI.onStatusChange((wallet) => {
+      if (wallet) {
+        setIsTonConnected(true);
+      } else {
+        setIsTonConnected(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [tonConnectUI]);
+
+  const handleTonClick = async () => {
+    if (!isTonConnected) {
+      try {
+        await tonConnectUI.openModal();
+      } catch (error) {
+        console.error("Ton connect error:", error);
+      }
+      return;
+    }
+  };
+
   return (
     <>
       <Stack
         bg="var(--mantine-color-body)"
-        align="stretch"
+        align="center"
         justify="center"
         gap="md"
       >
+        <Title order={1} ta="center">Cheeki Earn</Title>
+
+        {isTonConnected && (
+          <p>TON CONECTED</p>
+        )}
+
         <img src="/logo.png" alt="Logo" style={{ width: '100px', margin: '0 auto' }} />
         {(isValid === null || !isValid) && (
           <>
@@ -53,7 +88,10 @@ function App() {
           <Text c="red" ta="center">Invalid PIN. Please try again.</Text>
         )}
         {isValid === true && (
-          <ReceiptUploader/>
+          <>
+            <Button color="dark" onClick={handleTonClick}>Connect TON Wallet to continue</Button>
+            {isTonConnected && (<ReceiptUploader/>)}
+          </>
         )}
       </Stack>
     </>

@@ -1,0 +1,7 @@
+{
+  "url": "%VITE_APP_URL%",
+  "name": "Cheeki",
+  "iconUrl": "%VITE_APP_URL%/logo.png",
+  "termsOfUseUrl": "",
+  "privacyPolicyUrl": ""
+}
