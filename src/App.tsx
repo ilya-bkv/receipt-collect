@@ -3,13 +3,22 @@ import { Stack, PinInput, Text, Title, Button } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { ReceiptUploader } from './components/ReceiptUploader.tsx';
 import { useTonConnectUI } from '@tonconnect/ui-react';
+import { useTonAddress } from '@tonconnect/ui-react';
+
+
+const  shortenAddress = (address: string, startLen = 6, endLen = 3): string => {
+  if (address.length <= startLen + endLen + 3) return address;
+  return `${address.slice(0, startLen)}…${address.slice(-endLen)}`;
+}
 
 function App() {
   const [pin, setPin] = useState<string>('');
   const [isValid, setIsValid] = useState<boolean | null>(null);
   const [isTonConnected, setIsTonConnected] = useState(false);
+  const [walletInfo, setWalletInfo] = useState<any>(null);
 
   const [tonConnectUI] = useTonConnectUI();
+  const userFriendlyAddress = useTonAddress();
 
   const handlePinChange = (value: string) => {
     setPin(value);
@@ -28,15 +37,20 @@ function App() {
   }, []);
 
   useEffect(() => {
+    console.log('!!! tonConnectUI:', tonConnectUI)
     if (tonConnectUI.connected && tonConnectUI.wallet) {
       setIsTonConnected(true);
+      setWalletInfo(tonConnectUI.wallet);
+      console.log('!!! walletInfo:', tonConnectUI.wallet)
     }
 
     const unsubscribe = tonConnectUI.onStatusChange((wallet) => {
       if (wallet) {
         setIsTonConnected(true);
+        setWalletInfo(wallet);
       } else {
         setIsTonConnected(false);
+        setWalletInfo(null);
       }
     });
     return () => unsubscribe();
@@ -63,8 +77,14 @@ function App() {
       >
         <Title order={1} ta="center">Cheeki Earn</Title>
 
-        {isTonConnected && (
-          <p>TON CONECTED</p>
+        {isTonConnected && walletInfo && (
+          <Stack align="center">
+            <Text fw={700}>TON Connected</Text>
+            <Text size="sm">Wallet Address: {shortenAddress(userFriendlyAddress)}</Text>
+            <Button size="xs" color="red" onClick={() => tonConnectUI.disconnect()}>
+              Disconnect
+            </Button>
+          </Stack>
         )}
 
         <img src="/logo.png" alt="Logo" style={{ width: '100px', margin: '0 auto' }} />
@@ -89,8 +109,8 @@ function App() {
         )}
         {isValid === true && (
           <>
-            <Button color="dark" onClick={handleTonClick}>Connect TON Wallet to continue</Button>
-            {isTonConnected && (<ReceiptUploader/>)}
+
+            {isTonConnected ? <ReceiptUploader/> : <Button color="dark" onClick={handleTonClick}>Connect TON Wallet to continue</Button>}
           </>
         )}
       </Stack>
