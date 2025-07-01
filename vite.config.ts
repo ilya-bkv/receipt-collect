@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 import mkcert from 'vite-plugin-mkcert'
 import * as fs from 'fs'
 import * as path from 'path'
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 // Custom plugin to replace environment variables in JSON files
 const replaceEnvInJson = (): Plugin => {
@@ -67,7 +68,8 @@ const replaceEnvInJson = (): Plugin => {
 }
 
 export default defineConfig({
-  plugins: [react(), mkcert(), replaceEnvInJson()],
+  plugins: [react(), mkcert(), replaceEnvInJson(), nodePolyfills()],
+  base: '/',
   server: {
     https: {},
     host: '127.0.0.1',

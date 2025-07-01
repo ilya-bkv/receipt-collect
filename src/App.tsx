@@ -1,10 +1,11 @@
 import './App.css'
+import { ReceiptUploader } from './components/ReceiptUploader.tsx';
 import { Stack, PinInput, Text, Title, Button } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { ReceiptUploader } from './components/ReceiptUploader.tsx';
-import { useTonConnectUI } from '@tonconnect/ui-react';
-import { useTonAddress } from '@tonconnect/ui-react';
-
+import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
+import type { JettonBalance } from '@ton-api/client';
+import ta from "./tonapi";
+import { Address } from '@ton/core';
 
 const  shortenAddress = (address: string, startLen = 6, endLen = 3): string => {
   if (address.length <= startLen + endLen + 3) return address;
@@ -15,10 +16,10 @@ function App() {
   const [pin, setPin] = useState<string>('');
   const [isValid, setIsValid] = useState<boolean | null>(null);
   const [isTonConnected, setIsTonConnected] = useState(false);
-  const [walletInfo, setWalletInfo] = useState<any>(null);
+  const [jettons, setJettons] = useState<JettonBalance[] | null>(null);
 
   const [tonConnectUI] = useTonConnectUI();
-  const userFriendlyAddress = useTonAddress();
+  const connectedAddressString = useTonAddress();
 
   const handlePinChange = (value: string) => {
     setPin(value);
@@ -37,20 +38,15 @@ function App() {
   }, []);
 
   useEffect(() => {
-    console.log('!!! tonConnectUI:', tonConnectUI)
     if (tonConnectUI.connected && tonConnectUI.wallet) {
       setIsTonConnected(true);
-      setWalletInfo(tonConnectUI.wallet);
-      console.log('!!! walletInfo:', tonConnectUI.wallet)
     }
 
     const unsubscribe = tonConnectUI.onStatusChange((wallet) => {
       if (wallet) {
         setIsTonConnected(true);
-        setWalletInfo(wallet);
       } else {
         setIsTonConnected(false);
-        setWalletInfo(null);
       }
     });
     return () => unsubscribe();
@@ -67,7 +63,18 @@ function App() {
     }
   };
 
-  //
+  useEffect(() => {
+    if (!connectedAddressString) {
+      setJettons(null);
+      return;
+    }
+
+    ta.accounts
+      .getAccountJettonsBalances(Address.parse(connectedAddressString))
+      .then(res => setJettons(res.balances))
+      .catch(err => console.error(err.message || "Failed to fetch jettons"));
+  }, [connectedAddressString]);
+
   return (
     <>
       <Stack
@@ -78,13 +85,22 @@ function App() {
       >
         <Title order={1} ta="center">Cheeki Earn</Title>
 
-        {isTonConnected && walletInfo && (
+        {isTonConnected && tonConnectUI.wallet && (
           <Stack align="center">
-            <Text fw={700}>TON Connected</Text>
-            <Text size="sm">Wallet Address: {shortenAddress(userFriendlyAddress)}</Text>
+            <Text fw={700}>{shortenAddress(connectedAddressString)}</Text>
             <Button size="xs" color="red" onClick={() => tonConnectUI.disconnect()}>
               Disconnect
             </Button>
+
+            {jettons ? (
+              jettons.map((j, index) => (
+                <Text size="sm" key={index}>
+                  {j.jetton.name}: {j.balance}
+                </Text>
+              ))
+            ) : (
+              <p>No jettons found</p>
+            )}
           </Stack>
         )}
 
