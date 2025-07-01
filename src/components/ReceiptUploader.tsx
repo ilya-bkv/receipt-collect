@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FileButton, Button, Group, Text, Box, Paper, LoadingOverlay, Table } from '@mantine/core';
+import { FileButton, Button, Group, Text, Box, Paper, LoadingOverlay, Table, Title } from '@mantine/core';
 import axios from 'axios';
 
 export const ReceiptUploader = () => {
@@ -88,28 +88,32 @@ export const ReceiptUploader = () => {
   };
   return (
     <div>
-      <Text size="lg">
-        Upload an image of your receipt
-      </Text>
 
-      <Group justify="center" mt={24}>
-        {file ? (
-          <><Button
-            color="green"
-            onClick={parseReceipt}
-            disabled={!file}
-          >
-            Parse Receipt
-          </Button>
-            <Button disabled={!file && !error} color="red" onClick={clearFile}>
-              Reset
-            </Button></>
-        ) : (
-          <FileButton resetRef={resetRef} onChange={handleFileChange}>
-            {(props) => <Button {...props}>Upload image</Button>}
-          </FileButton>
-        )}
-      </Group>
+      {!receiptData && (
+        <>
+          <Title order={4} mt={24}>
+            Upload an image of your receipt
+          </Title>
+          <Group justify="center" mt={24}>
+            {file ? (
+              <><Button
+                color="green"
+                onClick={parseReceipt}
+                disabled={!file}
+              >
+                Parse Receipt
+              </Button>
+                <Button disabled={!file && !error} color="red" onClick={clearFile}>
+                  Reset
+                </Button></>
+            ) : (
+              <FileButton resetRef={resetRef} onChange={handleFileChange}>
+                {(props) => <Button {...props}>Upload image</Button>}
+              </FileButton>
+            )}
+          </Group>
+        </>
+      )}
 
       {error && (
         <Text size="sm" ta="center" mt="sm" c="red">
