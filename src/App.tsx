@@ -114,21 +114,21 @@ function App() {
 
         {isValid === true && jetton && jetton.balance > 0 ? (
           <Stack gap="xs" mt={24}>
-            <Text size="sm">
-              Your goals:
-            </Text>
-            <Group gap="xs">
+            <Group gap="xs" justify="center">
               <Avatar size="sm" src={jetton.jetton.image} alt={jetton.jetton.symbol}>
                 {jetton.jetton.symbol}
               </Avatar>
-              <Text size="lg" fw={500}>
-                <NumberFormatter
-                  suffix={` ${jetton.jetton.symbol}`}
-                  value={Number(jetton.balance)}
-                  thousandSeparator
-                />
+              <Text size="md" fw={600}>
+                Your goals:
               </Text>
             </Group>
+            <Text size="lg" fw={500}>
+              <NumberFormatter
+                suffix={` ${jetton.jetton.symbol}`}
+                value={Number(jetton.balance)}
+                thousandSeparator
+              />
+            </Text>
           </Stack>
         ) : (
           <img src="/logo.png" alt="Logo" style={{width: '100px', margin: '0 auto'}}/>
