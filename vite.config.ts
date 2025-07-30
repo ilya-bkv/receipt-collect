@@ -67,12 +67,25 @@ const replaceEnvInJson = (): Plugin => {
   }
 }
 
-export default defineConfig({
-  plugins: [react(), mkcert(), replaceEnvInJson(), nodePolyfills()],
-  base: '/',
-  server: {
-    https: {},
-    host: '127.0.0.1',
-    port: 3000
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const apiUrl = new URL(env.VITE_API_URL || 'https://recept-collect-back.onrender.com/api/receipts');
+
+  return {
+    plugins: [react(), mkcert(), replaceEnvInJson(), nodePolyfills()],
+    base: '/',
+    server: {
+      https: {},
+      host: '127.0.0.1',
+      port: 3000,
+      proxy: {
+        '/api/receipts': {
+          target: `${apiUrl.protocol}//${apiUrl.host}`,
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path
+        }
+      }
+    }
   }
 })

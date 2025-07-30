@@ -1,0 +1,42 @@
+{
+  "totalAmount": {
+    "data": 1399.37,
+    "confidenceLevel": 0.9199999999999999
+  },
+  "taxAmount": {
+    "data": 104.51,
+    "confidenceLevel": 0.9199999999999999
+  },
+  "confidenceLevel": 0.898,
+  "date": {
+    "data": "2022-01-04T12:00:00.000Z",
+    "confidenceLevel": 0.9199999999999999
+  },
+  "merchantName": {
+    "data": "Пятёрочка",
+    "confidenceLevel": 0.8100000000000002
+  },
+  "merchantAddress": {
+    "data": "Союзная улица, 1В, Одинцово, Московская область, 143006",
+    "confidenceLevel": 0.9501000000000002
+  },
+  "merchantCity": {
+    "data": "Одинцово",
+    "confidenceLevel": 0.9501000000000002
+  },
+  "merchantState": {
+    "data": "Одинцово, Московская область",
+    "confidenceLevel": 0.9501000000000002
+  },
+  "merchantCountryCode": {
+    "data": "RU",
+    "confidenceLevel": 0.9501000000000002
+  },
+  "merchantPostalCode": {
+    "data": "143006",
+    "confidenceLevel": 0.9501000000000002
+  },
+  "merchantTypes": {
+    "confidenceLevel": 0
+  }
+}

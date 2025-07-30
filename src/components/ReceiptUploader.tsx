@@ -33,7 +33,7 @@ export const ReceiptUploader = () => {
       return;
     }
 
-    // Check file type
+    // Check type
     if (!ACCEPTED_FILE_TYPES.includes(selectedFile.type) &&
       !selectedFile.name.toLowerCase().endsWith('.heic')) {
       setError(`Invalid file type. Accepted types: PDF, JPG, PNG, GIF, HEIC`);
@@ -66,6 +66,7 @@ export const ReceiptUploader = () => {
       form.append('extractTime', 'false');
       form.append('refresh', 'false');
       form.append('incognito', 'false');
+      form.append('extractLineItems', 'true');
 
       const response = await axios.post(
         'https://api.taggun.io/api/receipt/v1/simple/file',

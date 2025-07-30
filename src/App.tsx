@@ -17,6 +17,9 @@ import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
 import type { JettonBalance } from '@ton-api/client';
 import ta from './tonapi';
 import { Address } from '@ton/core';
+import axios from 'axios';
+import receipt from './assets/mock.json'
+import * as React from 'react';
 
 const shortenAddress = (address: string, startLen = 6, endLen = 3): string => {
   if (address.length <= startLen + endLen + 3) return address;
@@ -28,9 +31,9 @@ function App() {
   const [isValid, setIsValid] = useState<boolean | null>(null);
   const [isTonConnected, setIsTonConnected] = useState(false);
   const [jetton, setJetton] = useState<JettonBalance | null>(null);
-
   const [tonConnectUI] = useTonConnectUI();
   const connectedAddressString = useTonAddress();
+  const receiptId = React.useId();
 
   const handlePinChange = (value: string) => {
     setPin(value);
@@ -90,6 +93,25 @@ function App() {
       .catch(err => console.error(err.message || 'Failed to fetch jettons'));
   }, [connectedAddressString]);
 
+  const handlePutCheck = async () => {
+    console.log('!!! Using proxied API endpoint: /api/receipts')
+    try {
+      const response = await axios.post('/api/receipts', {
+        "userId": `${Telegram.WebApp.initDataUnsafe.user?.id}_dev`,
+        "receiptId": receiptId,
+        "receiptData": JSON.stringify(receipt)
+      });
+
+      console.log('Receipt submission successful:', response.data);
+    } catch (error) {
+      console.error('Receipt submission failed:', error);
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || error.message;
+        console.error(errorMessage);
+      }
+    }
+  }
+
   return (
     <>
       {isValid === true && isTonConnected && tonConnectUI.wallet && (
@@ -125,7 +147,7 @@ function App() {
             <Text size="lg" fw={500}>
               <NumberFormatter
                 suffix={` ${jetton.jetton.symbol}`}
-                value={Number(jetton.balance)}
+                value={Number(jetton.balance).toString().slice(0, 2)}
                 thousandSeparator
               />
             </Text>
@@ -159,6 +181,12 @@ function App() {
               <Button color="dark" onClick={handleTonClick}>Connect TON Wallet to continue</Button>}
           </>
         )}
+      </Stack>
+
+      <Stack align="center" mt={20}>
+        <Button onClick={handlePutCheck}>
+          Send receipt!
+        </Button>
       </Stack>
     </>
   )
