@@ -18,24 +18,29 @@ import type { JettonBalance } from '@ton-api/client';
 import ta from './tonapi';
 import { Address } from '@ton/core';
 import axios from 'axios';
-import receipt from './assets/mock.json'
-import * as React from 'react';
+import ReactConfetti from 'react-confetti';
+// import receipt from './assets/mock.json'
 
 const shortenAddress = (address: string, startLen = 6, endLen = 3): string => {
   if (address.length <= startLen + endLen + 3) return address;
   return `${address.slice(0, startLen)}…${address.slice(-endLen)}`;
 }
 
+const generateRandomId = () =>
+  `${Math.random().toString(36).substring(2, 15)}_${Date.now().toString(36)}`
+
 function App() {
   const [pin, setPin] = useState<string>('');
   const [isValid, setIsValid] = useState<boolean | null>(null);
   const [isTonConnected, setIsTonConnected] = useState(false);
   const [jetton, setJetton] = useState<JettonBalance | null>(null);
+  const [jettonBalance, setJettonBalance] = useState<number>(0);
   const [receiptsCount, setReceiptsCount] = useState<number>(0);
   const [isReceiptDataParsed, setIsReceiptDataParsed] = useState<boolean>(false);
+  const [receipt, setReceipt] = useState<any>(null);
   const [tonConnectUI] = useTonConnectUI();
   const connectedAddressString = useTonAddress();
-  const receiptId = React.useId();
+  const [showConfetti, setShowConfetti] = useState<boolean>(false);
 
   const handlePinChange = (value: string) => {
     setPin(value);
@@ -47,26 +52,25 @@ function App() {
     }
   };
 
+  const fetchReceipts = async () => {
+    if (Telegram.WebApp.initDataUnsafe.user?.id) {
+      try {
+        const response = await axios.get(`/api/receipts/user/${Telegram.WebApp.initDataUnsafe.user.id}`);
+        console.log('!!! api/receipts/user:', response);
+        if (response.data && Array.isArray(response.data)) {
+          setReceiptsCount(response.data.length);
+          console.log('Receipts count:', response.data.length);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  };
+
   useEffect(() => {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
     Telegram.WebApp.lockOrientation();
-
-    const fetchReceipts = async () => {
-      if (Telegram.WebApp.initDataUnsafe.user?.id) {
-        try {
-          const response = await axios.get(`/receipts/user/${Telegram.WebApp.initDataUnsafe.user.id}`);
-          // const response = await axios.get(`/receipts/user/1`);
-          console.log('!!! response:', response);
-          if (response.data && Array.isArray(response.data)) {
-            setReceiptsCount(response.data.length);
-            console.log('Receipts count:', response.data.length);
-          }
-        } catch (error) {
-          console.log(error);
-        }
-      }
-    };
 
     fetchReceipts();
   }, []);
@@ -108,22 +112,39 @@ function App() {
       .then(res => {
         console.log('%c!!! getAccountJettonsBalances:', 'color: #bada55', res)
         const chk = res.balances.find((item: JettonBalance) => item.jetton.symbol === 'CHK');
-        if (chk) setJetton(chk)
+        if (chk) {
+          setJetton(chk);
+          setJettonBalance(Number(chk.balance));
+        }
       })
       .catch(err => console.error(err.message || 'Failed to fetch jettons'));
 
   }, [connectedAddressString]);
 
+  // Reset confetti after 5 seconds
+  useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showConfetti]);
+
   const handlePutCheck = async () => {
     try {
+      const randomId = generateRandomId();
       const response = await axios.post('/api/receipts', {
         'userId': `${Telegram.WebApp.initDataUnsafe.user?.id}`,
-        // "userId": '1',
-        'receiptId': receiptId,
-        'receiptData': JSON.stringify(receipt)
+        'receiptId': randomId,
+        'receiptData': JSON.stringify(receipt),
       });
 
-      console.log('Receipt submission successful:', response.data);
+      console.log('Receipt submission successful:', response.data)
+      setShowConfetti(true);
+      setJettonBalance(prevBalance => prevBalance + 1000000000);
+      await fetchReceipts();
     } catch (error) {
       console.error('Receipt submission failed:', error);
       if (axios.isAxiosError(error)) {
@@ -135,6 +156,16 @@ function App() {
 
   return (
     <>
+      {showConfetti && (
+        <ReactConfetti
+          width={window.innerWidth}
+          height={window.innerHeight}
+          recycle={false}
+          numberOfPieces={300}
+          gravity={0.4}
+        />
+      )}
+
       {isValid === true && isTonConnected && tonConnectUI.wallet && (
         <Group p={12} justify="right" w="100%" gap="xs" className="sticky-header">
           <Badge
@@ -155,7 +186,7 @@ function App() {
       >
         <Title order={1} ta="center">Cheeki Earn</Title>
 
-        {isValid === true && jetton && jetton.balance > 0 ? (
+        {isValid === true && jetton && jettonBalance > 0 ? (
           <Stack gap="xs" mt={24}>
             <Group gap="xs" justify="center">
               <Avatar size="sm" src={jetton.jetton.image} alt={jetton.jetton.symbol}>
@@ -168,7 +199,7 @@ function App() {
             <Text size="lg" fw={500}>
               <NumberFormatter
                 suffix={` ${jetton.jetton.symbol}`}
-                value={Number(jetton.balance).toString().slice(0, 2)}
+                value={jettonBalance.toString().slice(0, 2)}
                 thousandSeparator
               />
             </Text>
@@ -203,7 +234,7 @@ function App() {
         )}
         {isValid === true && (
           <>
-            {isTonConnected ? <ReceiptUploader isDataParsed={setIsReceiptDataParsed}/> :
+            {isTonConnected ? <ReceiptUploader isDataParsed={setIsReceiptDataParsed} onReceiptData={setReceipt}/> :
               <Button radius="xl" color="dark" onClick={handleTonClick}>Connect TON Wallet to continue</Button>}
           </>
         )}

@@ -17,6 +17,7 @@
     "@tonconnect/ui-react": "^2.2.0",
     "axios": "^1.11.0",
     "react": "^19.1.0",
+    "react-confetti": "^6.1.0",
     "react-dom": "^19.1.0",
     "vite-plugin-node-polyfills": "^0.23.0"
   },

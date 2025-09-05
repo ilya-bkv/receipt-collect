@@ -4,6 +4,7 @@ import axios from 'axios';
 
 type Props = {
   isDataParsed?: (parsed: boolean) => void;
+  onReceiptData?: (data: any) => void;
 }
 
 export const ReceiptUploader = (props: Props) => {
@@ -85,6 +86,7 @@ export const ReceiptUploader = (props: Props) => {
 
       setReceiptData(response.data);
       props.isDataParsed?.(true);
+      props.onReceiptData?.(response.data);
     } catch (err) {
       console.error(err);
       setError('Failed to parse receipt. Please try again.');
