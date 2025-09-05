@@ -31,6 +31,7 @@ function App() {
   const [isValid, setIsValid] = useState<boolean | null>(null);
   const [isTonConnected, setIsTonConnected] = useState(false);
   const [jetton, setJetton] = useState<JettonBalance | null>(null);
+  const [receiptsCount, setReceiptsCount] = useState<number>(0);
   const [tonConnectUI] = useTonConnectUI();
   const connectedAddressString = useTonAddress();
   const receiptId = React.useId();
@@ -49,6 +50,24 @@ function App() {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
     Telegram.WebApp.lockOrientation();
+
+    const fetchReceipts = async () => {
+      // if (Telegram.WebApp.initDataUnsafe.user?.id) {
+      // }
+        try {
+          // const response = await axios.get(`/receipts/user/${Telegram.WebApp.initDataUnsafe.user.id}`);
+          const response = await axios.get(`/receipts/user/1`);
+          console.log('!!! response:', response);
+          if (response.data && Array.isArray(response.data)) {
+            setReceiptsCount(response.data.length);
+            console.log('Receipts count:', response.data.length);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+    };
+
+    fetchReceipts();
   }, []);
 
   useEffect(() => {
@@ -91,13 +110,14 @@ function App() {
         if (chk) setJetton(chk)
       })
       .catch(err => console.error(err.message || 'Failed to fetch jettons'));
+
   }, [connectedAddressString]);
 
   const handlePutCheck = async () => {
-    console.log('!!! Using proxied API endpoint: /api/receipts')
     try {
       const response = await axios.post('/api/receipts', {
-        "userId": `${Telegram.WebApp.initDataUnsafe.user?.id}_dev`,
+        // "userId": `${Telegram.WebApp.initDataUnsafe.user?.id}`,
+        "userId": '1',
         "receiptId": receiptId,
         "receiptData": JSON.stringify(receipt)
       });
@@ -151,6 +171,11 @@ function App() {
                 thousandSeparator
               />
             </Text>
+            <Group gap="xs" justify="center" mt={10}>
+              <Text size="md" fw={600}>
+                Your receipts: {receiptsCount}
+              </Text>
+            </Group>
           </Stack>
         ) : (
           <img src="/logo.png" alt="Logo" style={{width: '100px', margin: '0 auto'}}/>

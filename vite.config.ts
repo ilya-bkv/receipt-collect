@@ -69,7 +69,7 @@ const replaceEnvInJson = (): Plugin => {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const apiUrl = new URL(env.VITE_API_URL || 'https://recept-collect-back.onrender.com/api/receipts');
+  const apiUrl = new URL(env.VITE_BACKEND_API_URL);
 
   return {
     plugins: [react(), mkcert(), replaceEnvInJson(), nodePolyfills()],
