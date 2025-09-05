@@ -32,6 +32,7 @@ function App() {
   const [isTonConnected, setIsTonConnected] = useState(false);
   const [jetton, setJetton] = useState<JettonBalance | null>(null);
   const [receiptsCount, setReceiptsCount] = useState<number>(0);
+  const [isReceiptDataParsed, setIsReceiptDataParsed] = useState<boolean>(false);
   const [tonConnectUI] = useTonConnectUI();
   const connectedAddressString = useTonAddress();
   const receiptId = React.useId();
@@ -52,11 +53,10 @@ function App() {
     Telegram.WebApp.lockOrientation();
 
     const fetchReceipts = async () => {
-      // if (Telegram.WebApp.initDataUnsafe.user?.id) {
-      // }
+      if (Telegram.WebApp.initDataUnsafe.user?.id) {
         try {
-          // const response = await axios.get(`/receipts/user/${Telegram.WebApp.initDataUnsafe.user.id}`);
-          const response = await axios.get(`/receipts/user/1`);
+          const response = await axios.get(`/receipts/user/${Telegram.WebApp.initDataUnsafe.user.id}`);
+          // const response = await axios.get(`/receipts/user/1`);
           console.log('!!! response:', response);
           if (response.data && Array.isArray(response.data)) {
             setReceiptsCount(response.data.length);
@@ -65,6 +65,7 @@ function App() {
         } catch (error) {
           console.log(error);
         }
+      }
     };
 
     fetchReceipts();
@@ -116,10 +117,10 @@ function App() {
   const handlePutCheck = async () => {
     try {
       const response = await axios.post('/api/receipts', {
-        // "userId": `${Telegram.WebApp.initDataUnsafe.user?.id}`,
-        "userId": '1',
-        "receiptId": receiptId,
-        "receiptData": JSON.stringify(receipt)
+        'userId': `${Telegram.WebApp.initDataUnsafe.user?.id}`,
+        // "userId": '1',
+        'receiptId': receiptId,
+        'receiptData': JSON.stringify(receipt)
       });
 
       console.log('Receipt submission successful:', response.data);
@@ -202,17 +203,19 @@ function App() {
         )}
         {isValid === true && (
           <>
-            {isTonConnected ? <ReceiptUploader/> :
-              <Button color="dark" onClick={handleTonClick}>Connect TON Wallet to continue</Button>}
+            {isTonConnected ? <ReceiptUploader isDataParsed={setIsReceiptDataParsed}/> :
+              <Button radius="xl" color="dark" onClick={handleTonClick}>Connect TON Wallet to continue</Button>}
           </>
         )}
       </Stack>
 
-      <Stack align="center" mt={20}>
-        <Button onClick={handlePutCheck}>
-          Send receipt!
-        </Button>
-      </Stack>
+      {connectedAddressString && isReceiptDataParsed && (
+        <Stack align="center" mt={20}>
+          <Button radius="xl" variant="filled" color="pink" onClick={handlePutCheck}>
+            Get Coins!
+          </Button>
+        </Stack>
+      )}
     </>
   )
 }

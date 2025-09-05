@@ -2,7 +2,11 @@ import { useState, useRef } from 'react';
 import { FileButton, Button, Group, Text, Box, Paper, LoadingOverlay, Table, Title } from '@mantine/core';
 import axios from 'axios';
 
-export const ReceiptUploader = () => {
+type Props = {
+  isDataParsed?: (parsed: boolean) => void;
+}
+
+export const ReceiptUploader = (props: Props) => {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -80,6 +84,7 @@ export const ReceiptUploader = () => {
       );
 
       setReceiptData(response.data);
+      props.isDataParsed?.(true);
     } catch (err) {
       console.error(err);
       setError('Failed to parse receipt. Please try again.');
@@ -97,19 +102,19 @@ export const ReceiptUploader = () => {
           </Title>
           <Group justify="center" mt={24}>
             {file ? (
-              <><Button
-                color="green"
-                onClick={parseReceipt}
-                disabled={!file}
+              <><Button radius="xl"
+                        color="green"
+                        onClick={parseReceipt}
+                        disabled={!file}
               >
                 Parse Receipt
               </Button>
-                <Button disabled={!file && !error} color="red" onClick={clearFile}>
+                <Button radius="xl" disabled={!file && !error} color="red" onClick={clearFile}>
                   Reset
                 </Button></>
             ) : (
               <FileButton resetRef={resetRef} onChange={handleFileChange}>
-                {(props) => <Button {...props}>Upload image</Button>}
+                {(props) => <Button radius="xl"  {...props}>Upload image</Button>}
               </FileButton>
             )}
           </Group>
