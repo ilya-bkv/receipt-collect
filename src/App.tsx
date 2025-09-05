@@ -55,7 +55,7 @@ function App() {
   const fetchReceipts = async () => {
     if (Telegram.WebApp.initDataUnsafe.user?.id) {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/user/${Telegram.WebApp.initDataUnsafe.user.id}`);
+        const response = await axios.get(`/api/receipts/user/${Telegram.WebApp.initDataUnsafe.user.id}`);
         console.log('!!! api/receipts/user:', response);
         if (response.data && Array.isArray(response.data)) {
           setReceiptsCount(response.data.length);
@@ -135,7 +135,7 @@ function App() {
   const handlePutCheck = async () => {
     try {
       const randomId = generateRandomId();
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}`, {
+      const response = await axios.post(`/api/receipts`, {
         'userId': `${Telegram.WebApp.initDataUnsafe.user?.id}`,
         'receiptId': randomId,
         'receiptData': JSON.stringify(receipt),
