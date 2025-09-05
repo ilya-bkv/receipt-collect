@@ -1,10 +1,16 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { FileButton, Button, Group, Text, Box, Paper, LoadingOverlay, Table, Title } from '@mantine/core';
 import axios from 'axios';
+
+export type ReceiptUploaderRef = {
+  clearReceiptData: () => void;
+};
 
 type Props = {
   isDataParsed?: (parsed: boolean) => void;
   onReceiptData?: (data: any) => void;
+  clearReceiptData: boolean;
+  onDataCleared?: () => void;
 }
 
 export const ReceiptUploader = (props: Props) => {
@@ -13,6 +19,17 @@ export const ReceiptUploader = (props: Props) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [receiptData, setReceiptData] = useState<any>(null);
   const resetRef = useRef<() => void>(null);
+
+  useEffect(() => {
+    if (props.clearReceiptData) {
+      setFile(null);
+      setReceiptData(null);
+      setError(null);
+      resetRef.current?.();
+      // Notify parent component that data has been cleared
+      props.onDataCleared?.();
+    }
+  }, [props.clearReceiptData])
 
   const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
   const ACCEPTED_FILE_TYPES = [
@@ -143,7 +160,7 @@ export const ReceiptUploader = (props: Props) => {
       )}
 
       {receiptData && !loading && (
-        <Paper p="md" mt="md" withBorder>
+        <Paper p="xs" mt="md" withBorder>
           <Text size="md" fw={500} mb="xs">Receipt Data:</Text>
           <Box style={{maxHeight: '300px', overflow: 'auto'}}>
             <Table withColumnBorders withTableBorder striped>

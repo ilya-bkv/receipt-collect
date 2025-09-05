@@ -10,7 +10,7 @@ import {
   Group,
   CloseButton,
   Avatar,
-  NumberFormatter
+  NumberFormatter, LoadingOverlay
 } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
@@ -37,10 +37,18 @@ function App() {
   const [jettonBalance, setJettonBalance] = useState<number>(0);
   const [receiptsCount, setReceiptsCount] = useState<number>(0);
   const [isReceiptDataParsed, setIsReceiptDataParsed] = useState<boolean>(false);
+  const [isReceiptDataMustCleared, setIsReceiptDataMustCleared] = useState<boolean>(false);
   const [receipt, setReceipt] = useState<any>(null);
   const [tonConnectUI] = useTonConnectUI();
   const connectedAddressString = useTonAddress();
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const clearData = () => {
+    setIsReceiptDataParsed(false);
+    setReceipt(null)
+    setIsReceiptDataMustCleared(true)
+  }
 
   const handlePinChange = (value: string) => {
     setPin(value);
@@ -133,6 +141,7 @@ function App() {
   }, [showConfetti]);
 
   const handlePutCheck = async () => {
+    setIsLoading(true);
     try {
       const randomId = generateRandomId();
       const response = await axios.post(`/api/receipts`, {
@@ -145,12 +154,15 @@ function App() {
       setShowConfetti(true);
       setJettonBalance(prevBalance => prevBalance + 1000000000);
       await fetchReceipts();
+      clearData()
     } catch (error) {
       console.error('Receipt submission failed:', error);
       if (axios.isAxiosError(error)) {
         const errorMessage = error.response?.data?.message || error.message;
         console.error(errorMessage);
       }
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -199,7 +211,7 @@ function App() {
             <Text size="lg" fw={500}>
               <NumberFormatter
                 suffix={` ${jetton.jetton.symbol}`}
-                value={jettonBalance.toString().slice(0, 2)}
+                value={jettonBalance.toString()}
                 thousandSeparator
               />
             </Text>
@@ -234,18 +246,34 @@ function App() {
         )}
         {isValid === true && (
           <>
-            {isTonConnected ? <ReceiptUploader isDataParsed={setIsReceiptDataParsed} onReceiptData={setReceipt}/> :
+            {isTonConnected ?
+              <ReceiptUploader
+                clearReceiptData={isReceiptDataMustCleared}
+                isDataParsed={setIsReceiptDataParsed}
+                onReceiptData={setReceipt}
+                onDataCleared={() => setIsReceiptDataMustCleared(false)}
+              /> :
               <Button radius="xl" color="dark" onClick={handleTonClick}>Connect TON Wallet to continue</Button>}
           </>
         )}
       </Stack>
 
-      {connectedAddressString && isReceiptDataParsed && (
+      {connectedAddressString && isReceiptDataParsed && !isLoading && (
         <Stack align="center" mt={20}>
-          <Button radius="xl" variant="filled" color="pink" onClick={handlePutCheck}>
+          <Button
+            radius="xl"
+            variant="filled"
+            color="pink"
+            onClick={handlePutCheck}
+          >
             Get Coins!
           </Button>
         </Stack>
+      )}
+      {isLoading && (
+        <LoadingOverlay visible={isLoading} zIndex={10000} overlayProps={{radius: 'sm', blur: 2}}>
+          <Text size="sm" mt="xs">Processing receipt...</Text>
+        </LoadingOverlay>
       )}
     </>
   )
