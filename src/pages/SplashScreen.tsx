@@ -22,10 +22,7 @@ export const SplashScreen = () => {
 
   const user = useUserStore(useShallow((state) => ({
     id: state.id,
-    avatar: state.avatar,
     nicName: state.nicName ?? 'there',
-    goals: state.goals,
-    receipts: state.receipts
   })));
 
   const hasFetchedRef = useRef(false);
@@ -56,7 +53,7 @@ export const SplashScreen = () => {
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
-      const cap = apiAnswered ? 100 : 60;
+      const cap = apiAnswered ? 100 : 70;
       const diff = Math.random() * 10;
       const newProgress = Math.min(progressRef.current + diff, cap);
 

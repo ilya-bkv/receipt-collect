@@ -1,5 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
-import { FileButton, Button, Group, Text, Box, Paper, LoadingOverlay, Table, Title } from '@mantine/core';
+import {
+  FileButton,
+  Button,
+  Group,
+  Text,
+  Box,
+  Paper,
+  LoadingOverlay,
+  Table,
+  Title,
+  CloseButton,
+  Card,
+  Image, Stack
+} from '@mantine/core';
 import axios from 'axios';
 
 export type ReceiptUploaderRef = {
@@ -7,7 +20,6 @@ export type ReceiptUploaderRef = {
 };
 
 type Props = {
-  isDataParsed?: (parsed: boolean) => void;
   onReceiptData?: (data: any) => void;
   clearReceiptData: boolean;
   onDataCleared?: () => void;
@@ -19,16 +31,27 @@ export const ReceiptUploader = (props: Props) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [receiptData, setReceiptData] = useState<any>(null);
   const resetRef = useRef<() => void>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (props.clearReceiptData) {
       setFile(null);
       setReceiptData(null);
       setError(null);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
       resetRef.current?.();
       props.onDataCleared?.();
     }
   }, [props.clearReceiptData])
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
   const ACCEPTED_FILE_TYPES = [
@@ -45,6 +68,10 @@ export const ReceiptUploader = (props: Props) => {
 
     if (!selectedFile) {
       setFile(null);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
       return;
     }
 
@@ -62,12 +89,26 @@ export const ReceiptUploader = (props: Props) => {
     }
 
     setFile(selectedFile);
+
+    // Create preview only for browser-renderable images (skip HEIC)
+    if (selectedFile.type.startsWith('image/') && selectedFile.type !== 'image/heic') {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      const url = URL.createObjectURL(selectedFile);
+      setPreviewUrl(url);
+    } else {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
   };
 
   const clearFile = () => {
     setFile(null);
     setError(null);
     setReceiptData(null);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
     resetRef.current?.();
   };
 
@@ -106,9 +147,7 @@ export const ReceiptUploader = (props: Props) => {
         id: response.data.id || response.data._id || null // Ensure id is included in the response data
       };
 
-      // Store the receipt data including the id
       setReceiptData(responseData);
-      props.isDataParsed?.(true);
       props.onReceiptData?.(responseData);
     } catch (err) {
       console.error(err);
@@ -119,32 +158,38 @@ export const ReceiptUploader = (props: Props) => {
   };
   return (
     <div>
+      <Group justify="center" mt={24}>
 
-      {!receiptData && (
-        <>
-          <Title order={4} mt={24}>
-            Upload an image of your receipt
-          </Title>
-          <Group justify="center" mt={24}>
-            {file ? (
-              <><Button radius="xl"
-                        color="green"
-                        onClick={parseReceipt}
-                        disabled={!file}
-              >
-                Parse Receipt
-              </Button>
-                <Button radius="xl" disabled={!file && !error} color="red" onClick={clearFile}>
-                  Reset
-                </Button></>
-            ) : (
-              <FileButton resetRef={resetRef} onChange={handleFileChange}>
-                {(props) => <Button radius="xl"  {...props}>Upload image</Button>}
-              </FileButton>
-            )}
-          </Group>
-        </>
-      )}
+        {file ? (
+          <Stack>
+            <Title order={2} ta="center">Looks good!</Title>
+            <Button
+              radius="xl"
+              size="compact-lg"
+              color="green"
+              onClick={parseReceipt}
+              disabled={!file}
+              variant="gradient"
+              gradient={{from: 'blue', to: 'green', deg: 90}}
+            >
+              Tap to earn points!
+            </Button>
+          </Stack>
+        ) : (
+          <>
+            <Title order={2} ta="center">Receipt Uploader</Title>
+            <FileButton resetRef={resetRef} onChange={handleFileChange}>
+              {(props) => <Button
+                variant="gradient"
+                size="compact-lg"
+                gradient={{from: 'blue', to: 'green', deg: 90}} radius="xl" {...props}>
+                Select Receipt Image
+              </Button>}
+            </FileButton>
+          </>
+        )}
+      </Group>
+
 
       {error && (
         <Text size="sm" ta="center" mt="sm" c="red">
@@ -152,10 +197,15 @@ export const ReceiptUploader = (props: Props) => {
         </Text>
       )}
 
-      {file && (
-        <Text size="sm" ta="center" mt="sm" truncate="end" style={{maxWidth: 340}}>
-          <span style={{color: 'gray'}}>Picked file:</span> {file.name}
-        </Text>
+      {previewUrl && !loading && !receiptData && file && (
+        <Card withBorder shadow="sm" mt="18" radius="md" padding="0">
+          <CloseButton
+            style={{position: 'absolute', top: 0, right: 0}}
+            aria-label="Cancel" onClick={clearFile}
+            size="lg"
+          />
+          <Image src={previewUrl}/>
+        </Card>
       )}
 
       {loading && (
