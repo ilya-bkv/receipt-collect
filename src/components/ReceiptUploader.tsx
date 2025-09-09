@@ -26,7 +26,6 @@ export const ReceiptUploader = (props: Props) => {
       setReceiptData(null);
       setError(null);
       resetRef.current?.();
-      // Notify parent component that data has been cleared
       props.onDataCleared?.();
     }
   }, [props.clearReceiptData])
@@ -85,13 +84,13 @@ export const ReceiptUploader = (props: Props) => {
 
       const form = new FormData();
       form.append('file', file);
-      form.append('extractTime', 'false');
+      form.append('extractTime', 'true');
       form.append('refresh', 'false');
       form.append('incognito', 'false');
       form.append('extractLineItems', 'true');
 
       const response = await axios.post(
-        'https://api.taggun.io/api/receipt/v1/simple/file',
+        'https://api.taggun.io/api/receipt/v1/verbose/file',
         form,
         {
           headers: {
@@ -101,9 +100,16 @@ export const ReceiptUploader = (props: Props) => {
         }
       );
 
-      setReceiptData(response.data);
+      // Extract the response data including the id
+      const responseData = {
+        ...response.data,
+        id: response.data.id || response.data._id || null // Ensure id is included in the response data
+      };
+
+      // Store the receipt data including the id
+      setReceiptData(responseData);
       props.isDataParsed?.(true);
-      props.onReceiptData?.(response.data);
+      props.onReceiptData?.(responseData);
     } catch (err) {
       console.error(err);
       setError('Failed to parse receipt. Please try again.');

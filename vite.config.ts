@@ -79,8 +79,8 @@ export default defineConfig(({ mode }) => {
       host: '127.0.0.1',
       port: 3000,
       proxy: {
-        '/api/receipts': {
-          target: `${apiUrl.protocol}//${apiUrl.host}`,
+        '/api': {
+          target: `https://${apiUrl.host}`,
           changeOrigin: true,
           secure: true,
           rewrite: (path) => path
