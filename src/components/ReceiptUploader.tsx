@@ -158,10 +158,6 @@ export const ReceiptUploader = (props: Props) => {
       await axios.post(`${apiUrlProxy}/receipts`, {
         userId: user.id,
         receiptData: data
-      }, {
-        headers: {
-          'Access-Control-Allow-Origin': 'https://recept-collect-back.onrender.com/'
-        }
       });
     } catch (err) {
       // Surface backend error to UI and stop flow
@@ -188,10 +184,6 @@ export const ReceiptUploader = (props: Props) => {
       userId: user.id,
       goals: user.goals + 10,
       receiptId: receiptId
-    }, {
-      headers: {
-        'Access-Control-Allow-Origin': 'https://recept-collect-back.onrender.com/'
-      }
     });
 
     // Update user in local store

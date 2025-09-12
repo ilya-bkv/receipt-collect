@@ -29,12 +29,7 @@ export const SplashScreen = () => {
   const hasFetchedRef = useRef(false);
   const fetchUser = async (userId: string) => {
     try {
-      const url = `${apiUrlProxy}/login`;
-      const resp = await axios.post(url, { id: userId }, {
-        headers: {
-          'Access-Control-Allow-Origin': 'https://recept-collect-back.onrender.com/'
-        }
-      });
+      const resp = await axios.post(`${apiUrlProxy}/login`, { id: userId });
       console.log('%c!!! GET USER:', 'color: #bada55', resp.data);
       updateUser({
         goals: resp.data.goals,
