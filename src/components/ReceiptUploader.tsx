@@ -150,12 +150,12 @@ export const ReceiptUploader = (props: Props) => {
     });
 
     const data = {
-      ...response.data, // это данные receipt
-      id: receiptId // это мой кастомный ID
+      ...response.data,
+      id: receiptId
     } as const;
 
     try {
-      await axios.post(`${apiUrlProxy}/receipts`, {
+      await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/receipts`, {
         userId: user.id,
         receiptData: data
       });
