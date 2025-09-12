@@ -4,6 +4,7 @@ import { useUserStore } from '../stores/useUserStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useNavigate } from 'react-router';
 import axios from 'axios';
+import { apiUrlProxy } from '../utils/apiUrlProxy.ts';
 
 export const SplashScreen = () => {
   const [pin, setPin] = useState<string>('');
@@ -28,11 +29,9 @@ export const SplashScreen = () => {
   const hasFetchedRef = useRef(false);
   const fetchUser = async (userId: string) => {
     try {
-      const base = import.meta.env.DEV ? '/api' : import.meta.env.VITE_BACKEND_API_URL;
-      const url = `${base}/login`;
+      const url = `${apiUrlProxy}/login`;
       const resp = await axios.post(url, { id: userId });
-
-      console.log('%c!!! :', 'color: #bada55', resp.data);
+      console.log('%c!!! GET USER:', 'color: #bada55', resp.data);
       updateUser({
         goals: resp.data.goals,
         receipts: resp.data.receipts

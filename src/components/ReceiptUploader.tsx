@@ -1,26 +1,18 @@
-import { useState, useRef, useEffect } from 'react';
-import {
-  FileButton,
-  Button,
-  Group,
-  Text,
-  Box,
-  Paper,
-  LoadingOverlay,
-  Table,
-  Title,
-  CloseButton,
-  Card,
-  Image, Stack
-} from '@mantine/core';
+import { useEffect, useRef, useState } from 'react';
+import { Button, Card, CloseButton, FileButton, Group, Image, LoadingOverlay, Stack, Text, Title } from '@mantine/core';
 import axios from 'axios';
+import { apiUrlProxy } from '../utils/apiUrlProxy.ts';
+import { useUserStore } from '../stores/useUserStore.ts';
+import { useShallow } from 'zustand/react/shallow';
+import { useNavigate } from 'react-router';
+import { composeReceiptId } from '../utils/composeReceiptId.ts';
+import { RingLoader } from './RingLoader.tsx';
 
 export type ReceiptUploaderRef = {
   clearReceiptData: () => void;
 };
 
 type Props = {
-  onReceiptData?: (data: any) => void;
   clearReceiptData: boolean;
   onDataCleared?: () => void;
 }
@@ -28,15 +20,22 @@ type Props = {
 export const ReceiptUploader = (props: Props) => {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [receiptData, setReceiptData] = useState<any>(null);
-  const resetRef = useRef<() => void>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = useState<string | undefined>();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const resetRef = useRef<() => void>(null);
+  const navigate = useNavigate();
+  const user = useUserStore(useShallow((state) => ({
+    id: state.id,
+    goals: state.goals,
+    receipts: state.receipts
+  })));
 
   useEffect(() => {
     if (props.clearReceiptData) {
       setFile(null);
-      setReceiptData(null);
+
       setError(null);
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
@@ -104,7 +103,7 @@ export const ReceiptUploader = (props: Props) => {
   const clearFile = () => {
     setFile(null);
     setError(null);
-    setReceiptData(null);
+
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
@@ -115,65 +114,131 @@ export const ReceiptUploader = (props: Props) => {
   const parseReceipt = async () => {
     if (!file) {
       setError('Please select a file first');
+      return
+    }
+
+    setError(null);
+
+
+    const form = new FormData();
+    form.append('file', file);
+    form.append('extractTime', 'true');
+    form.append('refresh', 'false');
+    form.append('incognito', 'false');
+    form.append('extractLineItems', 'true');
+
+    const response = await axios.post(
+      'https://api.taggun.io/api/receipt/v1/verbose/file',
+      form,
+      {
+        headers: {
+          'accept': 'application/json',
+          'apikey': import.meta.env.VITE_API_KEY
+        }
+      }
+    );
+
+    // Check is really receipt
+    if (!response.data.totalAmount.data || !response.data.date.data) {
+      setError('Your image doesn’t really look like a receipt. Please try taking a new photo or upload a different image.')
+      return
+    }
+    const receiptId = await composeReceiptId({
+      totalAmount: response.data.totalAmount.data,
+      date: response.data.date.data,
+      merchantName: response.data.merchantName.data
+    });
+
+    const data = {
+      ...response.data, // это данные receipt
+      id: receiptId // это мой кастомный ID
+    } as const;
+
+    try {
+      await axios.post(`${apiUrlProxy}/receipts`, {
+        userId: user.id,
+        receiptData: data
+      });
+    } catch (err) {
+      // Surface backend error to UI and stop flow
+      if (axios.isAxiosError(err) && err.response) {
+        const status = err.response.status;
+
+        if (status === 409) {
+          setError('Receipt already exists');
+          return;
+        }
+      }
+
+      setError('Network error while saving receipt');
       return;
     }
 
-    try {
-      setLoading(true);
-      setError(null);
-      setReceiptData(null);
-
-      const form = new FormData();
-      form.append('file', file);
-      form.append('extractTime', 'true');
-      form.append('refresh', 'false');
-      form.append('incognito', 'false');
-      form.append('extractLineItems', 'true');
-
-      const response = await axios.post(
-        'https://api.taggun.io/api/receipt/v1/verbose/file',
-        form,
-        {
-          headers: {
-            'accept': 'application/json',
-            'apikey': import.meta.env.VITE_API_KEY
-          }
-        }
-      );
-
-      // Extract the response data including the id
-      const responseData = {
-        ...response.data,
-        id: response.data.id || response.data._id || null // Ensure id is included in the response data
-      };
-
-      setReceiptData(responseData);
-      props.onReceiptData?.(responseData);
-    } catch (err) {
-      console.error(err);
-      setError('Failed to parse receipt. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    return data;
   };
+
+  const updateUserEntity = async (receiptId: string) => {
+
+    // Update user in database
+    const updateUserDb = await axios.post(`${apiUrlProxy}/credit-user`, {
+      userId: user.id,
+      goals: user.goals + 10,
+      receiptId: receiptId
+    });
+    // Update user in local store
+
+    const { addReceipt, addGoals } = useUserStore.getState();
+    addGoals(10);
+    addReceipt(receiptId);
+    console.log('%c!!! UPDATE USER:', 'color: #bada55', updateUserDb.data);
+  }
+
+  const processingReceipt = async () => {
+    setIsLoading(true);
+    try {
+      // Step 1: Parsing receipt
+      setLoadingMessage('Processing receipt...')
+      const parsedReceiptData = await parseReceipt();
+
+      if (!parsedReceiptData) {
+        return;
+      }
+
+      // Шаг 3: Обновление данных пользователя
+      console.log('👤 Step 3: User data update');
+      await updateUserEntity(parsedReceiptData.id);
+      console.log('✅ Step 3 completed: User data updated');
+
+      // Шаг 4: Завершение обработки
+      console.log('🎉 All steps are successful! We go to the profile');
+      navigate('/profile');
+
+    } catch (error) {
+      console.error('❌ Error when processing a receipt:', error);
+      setError('There was an error when processing a receipt');
+    } finally {
+      setIsLoading(false);
+    }
+  }
   return (
     <div>
       <Group justify="center" mt={24}>
-
         {file ? (
           <Stack>
-            <Title order={2} ta="center">Looks good!</Title>
-            <Button
-              radius="xl"
-              size="compact-lg"
-              color="green"
-              onClick={parseReceipt}
-              disabled={!file}
-              variant="gradient"
-              gradient={{from: 'blue', to: 'green', deg: 90}}
-            >
-              Tap to earn points!
-            </Button>
+            <Title order={2} ta="center">{error ? 'Oops 😬' : 'Almost done!'}</Title>
+            {!error && (
+              <Button
+                radius="xl"
+                size="compact-lg"
+                color="green"
+                onClick={processingReceipt}
+                disabled={!file}
+                variant="gradient"
+                gradient={{from: 'blue', to: 'green', deg: 90}}
+              >
+                Tap to earn points!
+              </Button>
+            )}
           </Stack>
         ) : (
           <>
@@ -192,48 +257,70 @@ export const ReceiptUploader = (props: Props) => {
 
 
       {error && (
-        <Text size="sm" ta="center" mt="sm" c="red">
+        <Text size="sm" ta="center" mt="sm" fw="400" c="red">
           {error}
         </Text>
       )}
 
-      {previewUrl && !loading && !receiptData && file && (
-        <Card withBorder shadow="sm" mt="18" radius="md" padding="0">
+      {previewUrl && !isLoading && file && (
+        <div style={{position: 'relative'}}>
           <CloseButton
-            style={{position: 'absolute', top: 0, right: 0}}
-            aria-label="Cancel" onClick={clearFile}
+            style={{
+              position: 'absolute',
+              zIndex: 9999,
+              top: '-14px',
+              right: '-8px',
+              background: 'var(--mantine-color-body)',
+              border: '1px solid #ccc',
+              borderRadius: '100%',
+              cursor: 'pointer',
+            }}
+            aria-label="Cancel"
+            onClick={clearFile}
             size="lg"
+            disabled={isLoading}
+
           />
+        <Card withBorder shadow="sm" mt="18" radius="md" padding="0" >
           <Image src={previewUrl}/>
         </Card>
+        </div>
       )}
 
-      {loading && (
-        <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{radius: 'sm', blur: 2}}>
-          <Text size="sm" mt="xs">Processing receipt...</Text>
-        </LoadingOverlay>
 
-      )}
+        <LoadingOverlay
+          visible={isLoading}
+          loaderProps={{children:
+              <Stack justify="center" align="center">
+                <RingLoader/>
+                <Text size="md" ta="center" fw="500">{loadingMessage}</Text>
+              </Stack>
+        }}
+          zIndex={1000}
+          overlayProps={{radius: 'sm', blur: 4}}
+        />
 
-      {receiptData && !loading && (
-        <Paper p="xs" mt="md" withBorder>
-          <Text size="md" fw={500} mb="xs">Receipt Data:</Text>
-          <Box style={{maxHeight: '300px', overflow: 'auto'}}>
-            <Table withColumnBorders withTableBorder striped>
-              {Object.entries(receiptData).map(([key, value]) => (
-                <Table.Tr key={key}>
-                  <Table.Td><b>{key}</b></Table.Td>
-                  <Table.Td>
-                    {typeof value === 'object' && value !== null
-                      ? JSON.stringify(value, null, 2)
-                      : String(value)}
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table>
-          </Box>
-        </Paper>
-      )}
+
+
+      {/*{receiptData && !loading && (*/}
+      {/*  <Paper p="xs" mt="md" withBorder>*/}
+      {/*    <Text size="md" fw={500} mb="xs">Receipt Data:</Text>*/}
+      {/*    <Box style={{maxHeight: '300px', overflow: 'auto'}}>*/}
+      {/*      <Table withColumnBorders withTableBorder striped>*/}
+      {/*        {Object.entries(receiptData).map(([key, value]) => (*/}
+      {/*          <Table.Tr key={key}>*/}
+      {/*            <Table.Td><b>{key}</b></Table.Td>*/}
+      {/*            <Table.Td>*/}
+      {/*              {typeof value === 'object' && value !== null*/}
+      {/*                ? JSON.stringify(value, null, 2)*/}
+      {/*                : String(value)}*/}
+      {/*            </Table.Td>*/}
+      {/*          </Table.Tr>*/}
+      {/*        ))}*/}
+      {/*      </Table>*/}
+      {/*    </Box>*/}
+      {/*  </Paper>*/}
+      {/*)}*/}
     </div>
   )
 }

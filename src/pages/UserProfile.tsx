@@ -1,45 +1,118 @@
 import { type FC } from 'react';
-import { Container, Stack, Title, Text, Paper, Group, Avatar } from '@mantine/core';
+import { Container, Stack, Text, Paper, Group, Avatar, Divider, Button, Blockquote } from '@mantine/core';
+import useTelegramBackButton from '../hooks/useBackButton.tsx';
+import { useUserStore } from '../stores/useUserStore.ts';
+import { useShallow } from 'zustand/react/shallow';
+import axios from 'axios';
+import { apiUrlProxy } from '../utils/apiUrlProxy.ts';
 
 export const UserProfile: FC = () => {
-  // In a real app, this data would come from a user context or API
-  const user = {
-    name: 'User Name',
-    username: 'username',
-    receiptsCount: 0,
-    joinDate: new Date().toLocaleDateString()
+
+
+  const user = useUserStore(useShallow((state) => ({
+    id: state.id,
+    nicName: state.nicName,
+    avatar: state.avatar,
+    goals: state.goals,
+    receipts: state.receipts
+  })));
+
+  useTelegramBackButton('/uploader');
+
+
+  const getUserReceipts = async () => {
+    try {
+      const response = await axios.get(
+        `${apiUrlProxy}/user/${user.id}`
+      );
+      console.log("😊😊😊😊 User receipts:", response.data);
+    } catch (err: any) {
+      console.error("😊😊😊 Error fetching receipts:", err.response?.data || err.message);
+      throw err;
+    }
+  };
+  const resetUserReceipts = async () => {
+    try {
+      const response = await axios.post(
+        `${apiUrlProxy}/debug/reset-user/`, {userId: user.id}
+      );
+      console.log("😊😊😊😊 resetUserReceipts:", response.data);
+    } catch (err: any) {
+      console.error("😊😊😊 resetUserReceipts:", err.response?.data || err.message);
+      throw err;
+    }
+  };
+  const resetAllReceipts = async () => {
+    try {
+      const response = await axios.post(
+        `${apiUrlProxy}/debug/receipts/clear/`);
+      console.log("😊😊😊😊 resetAllReceipts:", response.data);
+    } catch (err: any) {
+      console.error("😊😊😊 resetAllReceipts:", err.response?.data || err.message);
+      throw err;
+    }
   };
 
+  console.log('%c!!! :', 'color: #bada55', user?.receipts)
   return (
-    <Container size="sm" py="xl">
-      <Paper p="md" radius="md" withBorder>
-        <Stack spacing="lg">
-          <Group position="center">
-            <Avatar size="xl" radius="xl" color="blue">
-              {user.name.charAt(0)}
-            </Avatar>
+    <Container size="sm" py="xl" style={{minWidth: '100vw'}}>
+      <img src="/logo.png"  alt="Logo" style={{width: '100px', margin: '20px auto'}}/>
+      <Paper shadow="sm" radius="md" withBorder p="md">
+        <Stack>
+          <Group>
+            <Avatar variant="outline" radius="xl" size="lg" color="blue" src={user.avatar} />
+            <Text
+              size="xl"
+              fw={900}
+              variant="gradient"
+              gradient={{ from: 'blue', to: 'green', deg: 90 }}
+              >{user.nicName}</Text>
           </Group>
+          <Divider/>
+          <Stack>
 
-          <Title order={2} ta="center">{user.name}</Title>
-
-          <Stack spacing="xs">
-            <Group position="apart">
-              <Text fw={500}>Username:</Text>
-              <Text>{user.username}</Text>
+            <Group>
+              <Text>User ID:</Text>
+              <Text fw={600}>{user.id}</Text>
+            </Group>
+            <Group>
+              <Text>Receipts Collected:</Text>
+              <Text fw={600}>{user?.receipts?.length}</Text>
+            </Group>
+            <Group>
+              <Text>Goals:</Text>
+              <Text fw={600}>{user.goals || 0}</Text>
             </Group>
 
-            <Group position="apart">
-              <Text fw={500}>Receipts Collected:</Text>
-              <Text>{user.receiptsCount}</Text>
-            </Group>
-
-            <Group position="apart">
-              <Text fw={500}>Member Since:</Text>
-              <Text>{user.joinDate}</Text>
-            </Group>
           </Stack>
         </Stack>
       </Paper>
+      <Blockquote color="red" cite="DANGER ZONE" mt="xl">
+        <Stack my="14">
+          <Button
+            size="md"
+            color="blue"
+            variant="outline"
+            onClick={getUserReceipts}
+          >
+            Get User Info
+          </Button>
+          <Button
+            size="md"
+            color="red"
+            onClick={resetUserReceipts}
+          >
+            Reset user
+          </Button>
+          <Button
+            size="md"
+            color="red"
+            onClick={resetAllReceipts}
+          >
+            Reset all receipts
+          </Button>
+        </Stack>
+      </Blockquote>
     </Container>
   );
 };
