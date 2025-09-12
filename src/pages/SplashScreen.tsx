@@ -30,7 +30,11 @@ export const SplashScreen = () => {
   const fetchUser = async (userId: string) => {
     try {
       const url = `${apiUrlProxy}/login`;
-      const resp = await axios.post(url, { id: userId });
+      const resp = await axios.post(url, { id: userId }, {
+        headers: {
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
       console.log('%c!!! GET USER:', 'color: #bada55', resp.data);
       updateUser({
         goals: resp.data.goals,
