@@ -155,7 +155,7 @@ export const ReceiptUploader = (props: Props) => {
     } as const;
 
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/receipts`, {
+      await axios.post(`${apiUrlProxy}/receipts`, {
         userId: user.id,
         receiptData: data
       });

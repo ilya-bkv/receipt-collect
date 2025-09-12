@@ -68,8 +68,8 @@ const replaceEnvInJson = (): Plugin => {
 }
 
 export default defineConfig(({ mode }) => {
-  // const env = loadEnv(mode, process.cwd(), '');
-  // const apiUrl = new URL(env.VITE_BACKEND_API_URL);
+  const env = loadEnv(mode, process.cwd(), '');
+  const apiUrl = new URL(env.VITE_BACKEND_API_URL);
 
   return {
     plugins: [react(), mkcert(), replaceEnvInJson(), nodePolyfills()],
@@ -78,14 +78,14 @@ export default defineConfig(({ mode }) => {
       https: {},
       host: '127.0.0.1',
       port: 3000,
-      // proxy: {
-      //   '/api': {
-      //     target: `https://${apiUrl.host}`,
-      //     changeOrigin: true,
-      //     secure: true,
-      //     rewrite: (path) => path
-      //   }
-      // }
+      proxy: {
+        '/api': {
+          target: `https://${apiUrl.host}`,
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path
+        }
+      }
     }
   }
 })
