@@ -204,18 +204,17 @@ export const ReceiptUploader = (props: Props) => {
         return;
       }
 
-      // Шаг 3: Обновление данных пользователя
-      console.log('👤 Step 3: User data update');
+      setLoadingMessage('👤 User data update');
       await updateUserEntity(parsedReceiptData.id);
-      console.log('✅ Step 3 completed: User data updated');
+      setLoadingMessage('✅ User data updated');
 
-      // Шаг 4: Завершение обработки
-      console.log('🎉 All steps are successful! We go to the profile');
+      setLoadingMessage('🎉 All steps are successful! We go to the profile');
       navigate('/profile');
 
     } catch (error) {
       console.error('❌ Error when processing a receipt:', error);
-      setError('There was an error when processing a receipt');
+      // setError('There was an error when processing a receipt');
+      setError(JSON.stringify(error));
     } finally {
       setIsLoading(false);
     }
