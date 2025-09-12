@@ -158,6 +158,10 @@ export const ReceiptUploader = (props: Props) => {
       await axios.post(`${apiUrlProxy}/receipts`, {
         userId: user.id,
         receiptData: data
+      }, {
+        headers: {
+          'Access-Control-Allow-Origin': 'https://recept-collect-back.onrender.com/'
+        }
       });
     } catch (err) {
       // Surface backend error to UI and stop flow
@@ -184,10 +188,14 @@ export const ReceiptUploader = (props: Props) => {
       userId: user.id,
       goals: user.goals + 10,
       receiptId: receiptId
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': 'https://recept-collect-back.onrender.com/'
+      }
     });
-    // Update user in local store
 
-    const { addReceipt, addGoals } = useUserStore.getState();
+    // Update user in local store
+    const {addReceipt, addGoals} = useUserStore.getState();
     addGoals(10);
     addReceipt(receiptId);
     console.log('%c!!! UPDATE USER:', 'color: #bada55', updateUserDb.data);
@@ -273,7 +281,7 @@ export const ReceiptUploader = (props: Props) => {
               background: 'var(--mantine-color-body)',
               border: '1px solid #ccc',
               borderRadius: '100%',
-              cursor: 'pointer',
+              cursor: 'pointer'
             }}
             aria-label="Cancel"
             onClick={clearFile}
@@ -281,25 +289,25 @@ export const ReceiptUploader = (props: Props) => {
             disabled={isLoading}
 
           />
-        <Card withBorder shadow="sm" mt="18" radius="md" padding="0" >
-          <Image src={previewUrl}/>
-        </Card>
+          <Card withBorder shadow="sm" mt="18" radius="md" padding="0">
+            <Image src={previewUrl}/>
+          </Card>
         </div>
       )}
 
 
-        <LoadingOverlay
-          visible={isLoading}
-          loaderProps={{children:
-              <Stack justify="center" align="center">
-                <RingLoader/>
-                <Text size="md" ta="center" fw="500">{loadingMessage}</Text>
-              </Stack>
+      <LoadingOverlay
+        visible={isLoading}
+        loaderProps={{
+          children:
+            <Stack justify="center" align="center">
+              <RingLoader/>
+              <Text size="md" ta="center" fw="500">{loadingMessage}</Text>
+            </Stack>
         }}
-          zIndex={1000}
-          overlayProps={{radius: 'sm', blur: 4}}
-        />
-
+        zIndex={1000}
+        overlayProps={{radius: 'sm', blur: 4}}
+      />
 
 
       {/*{receiptData && !loading && (*/}

@@ -32,7 +32,7 @@ export const SplashScreen = () => {
       const url = `${apiUrlProxy}/login`;
       const resp = await axios.post(url, { id: userId }, {
         headers: {
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': 'https://recept-collect-back.onrender.com/'
         }
       });
       console.log('%c!!! GET USER:', 'color: #bada55', resp.data);
