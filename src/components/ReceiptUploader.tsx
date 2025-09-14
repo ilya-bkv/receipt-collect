@@ -228,7 +228,7 @@ export const ReceiptUploader = (props: Props) => {
             {!error && (
               <Button
                 radius="xl"
-                size="compact-lg"
+                size="lg"
                 color="green"
                 onClick={processingReceipt}
                 disabled={!file}
@@ -245,7 +245,7 @@ export const ReceiptUploader = (props: Props) => {
             <FileButton resetRef={resetRef} onChange={handleFileChange}>
               {(props) => <Button
                 variant="gradient"
-                size="compact-lg"
+                size="lg"
                 gradient={{from: 'blue', to: 'green', deg: 90}} radius="xl" {...props}>
                 Select Receipt Image
               </Button>}
