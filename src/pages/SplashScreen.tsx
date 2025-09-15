@@ -31,7 +31,7 @@ export const SplashScreen = () => {
   const fetchUser = async (userId: string) => {
     try {
       const resp = await axios.post(`${apiUrlProxy}/login`, { id: userId });
-      console.log('%c!!! GET USER:', 'color: #bada55', resp.data);
+      setError(JSON.stringify(resp.data));
       updateUser({
         goals: resp.data.goals,
         receipts: resp.data.receipts
@@ -51,7 +51,7 @@ export const SplashScreen = () => {
       } catch (e) {
         // @ts-ignore
         setError(e.message);
-      };
+      }
     }
   }, [user.id]);
 
