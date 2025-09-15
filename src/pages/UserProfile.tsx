@@ -5,9 +5,12 @@ import { useUserStore } from '../stores/useUserStore.ts';
 import { useShallow } from 'zustand/react/shallow';
 import axios from 'axios';
 import { apiUrlProxy } from '../utils/apiUrlProxy.ts';
+import { useLocation } from 'react-router';
 
 export const UserProfile: FC = () => {
 
+  const location = useLocation();
+  console.log(location.state);
 
   const user = useUserStore(useShallow((state) => ({
     id: state.id,
@@ -25,9 +28,9 @@ export const UserProfile: FC = () => {
       const response = await axios.get(
         `${apiUrlProxy}/user/${user.id}`
       );
-      console.log("😊😊😊😊 User receipts:", response.data);
+      console.log('😊😊😊😊 User receipts:', response.data);
     } catch (err: any) {
-      console.error("😊😊😊 Error fetching receipts:", err.response?.data || err.message);
+      console.error('😊😊😊 Error fetching receipts:', err.response?.data || err.message);
       throw err;
     }
   };
@@ -36,9 +39,9 @@ export const UserProfile: FC = () => {
       const response = await axios.post(
         `${apiUrlProxy}/debug/reset-user/`, {userId: user.id}
       );
-      console.log("😊😊😊😊 resetUserReceipts:", response.data);
+      console.log('😊😊😊😊 resetUserReceipts:', response.data);
     } catch (err: any) {
-      console.error("😊😊😊 resetUserReceipts:", err.response?.data || err.message);
+      console.error('😊😊😊 resetUserReceipts:', err.response?.data || err.message);
       throw err;
     }
   };
@@ -46,27 +49,27 @@ export const UserProfile: FC = () => {
     try {
       const response = await axios.post(
         `${apiUrlProxy}/debug/receipts/clear/`);
-      console.log("😊😊😊😊 resetAllReceipts:", response.data);
+      console.log('😊😊😊😊 resetAllReceipts:', response.data);
     } catch (err: any) {
-      console.error("😊😊😊 resetAllReceipts:", err.response?.data || err.message);
+      console.error('😊😊😊 resetAllReceipts:', err.response?.data || err.message);
       throw err;
     }
   };
 
-  console.log('%c!!! :', 'color: #bada55', user?.receipts)
+
   return (
     <Container size="sm" py="xl" style={{minWidth: '100vw'}}>
-      <img src="/logo.png"  alt="Logo" style={{width: '100px', margin: '20px auto'}}/>
+      <img src="/logo.png" alt="Logo" style={{width: '100px', margin: '20px auto'}}/>
       <Paper shadow="sm" radius="md" withBorder p="md">
         <Stack>
           <Group>
-            <Avatar variant="outline" radius="xl" size="lg" color="blue" src={user.avatar} />
+            <Avatar variant="outline" radius="xl" size="lg" color="blue" src={user.avatar}/>
             <Text
               size="xl"
               fw={900}
               variant="gradient"
-              gradient={{ from: 'blue', to: 'green', deg: 90 }}
-              >{user.nicName}</Text>
+              gradient={{from: 'blue', to: 'green', deg: 90}}
+            >{user.nicName}</Text>
           </Group>
           <Divider/>
           <Stack>
@@ -76,11 +79,14 @@ export const UserProfile: FC = () => {
               <Text fw={600}>{user.id}</Text>
             </Group>
             <Group>
+              {/*TODO: начичлять по 10 баллов за чек + по 5 баллов за товар (отображать в модалке успеха)*/}
+
               <Text>Receipts Collected:</Text>
               <Text fw={600}>{user?.receipts?.length}</Text>
             </Group>
             <Group>
-              <Text>Goals:</Text>
+              {/*TODO: показать модалку что получил +N баллов + конфетти*/}
+              <Text>Earned points:</Text>
               <Text fw={600}>{user.goals || 0}</Text>
             </Group>
 

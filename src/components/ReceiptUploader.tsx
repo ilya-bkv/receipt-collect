@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Card, CloseButton, FileButton, Group, Image, LoadingOverlay, Stack, Text, Title } from '@mantine/core';
+import { Button, Card, CloseButton, FileButton, Group, Image, LoadingOverlay, Stack, Text, Title, Modal } from '@mantine/core';
 import axios from 'axios';
 import { apiUrlProxy } from '../utils/apiUrlProxy.ts';
 import { useUserStore } from '../stores/useUserStore.ts';
@@ -7,10 +7,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useNavigate } from 'react-router';
 import { composeReceiptId } from '../utils/composeReceiptId.ts';
 import { RingLoader } from './RingLoader.tsx';
-
-export type ReceiptUploaderRef = {
-  clearReceiptData: () => void;
-};
+import { useDisclosure } from '@mantine/hooks';
 
 type Props = {
   clearReceiptData: boolean;
@@ -206,7 +203,13 @@ export const ReceiptUploader = (props: Props) => {
       setLoadingMessage('👤 User data updating...');
       await updateUserEntity(parsedReceiptData.id);
 
-      navigate('/profile');
+      navigate('/profile', {
+        state: {
+           goals: parsedReceiptData.goals,
+           receiptEntity: 1,
+
+        }
+      });
 
     } catch (error) {
       console.error('❌ Error when processing a receipt:', error);
@@ -215,107 +218,134 @@ export const ReceiptUploader = (props: Props) => {
       setIsLoading(false);
     }
   }
+  const [opened, { open, close }] = useDisclosure(false);
+
+  // Модалка:
+  // Вы загрузили чек из дубая (показать что парсим адрес)
+  // Общая сумма чека N
+  // Кол-во найденных товаров в чеке.
+  // Мы вам начислили такое-то количество баллов за чек и за кол-во найденных товаров и
+  // 5 баллов за найденный адрес торговой точки
+
+
   return (
-    <div>
-      <Group justify="center" mt={24}>
-        {file ? (
-          <Stack>
-            <Title order={2} ta="center">{error ? 'Oops 😬' : 'Almost done!'}</Title>
-            {!error && (
-              <Button
-                radius="xl"
-                size="lg"
-                color="green"
-                onClick={processingReceipt}
-                disabled={!file}
-                variant="gradient"
-                gradient={{from: 'blue', to: 'green', deg: 90}}
-              >
-                Tap to earn points!
-              </Button>
-            )}
-          </Stack>
-        ) : (
-          <>
-            <Title order={2} ta="center">Receipt Uploader</Title>
-            <FileButton resetRef={resetRef} onChange={handleFileChange}>
-              {(props) => <Button
-                variant="gradient"
-                size="lg"
-                gradient={{from: 'blue', to: 'green', deg: 90}} radius="xl" {...props}>
-                Select Receipt Image
-              </Button>}
-            </FileButton>
-          </>
-        )}
-      </Group>
+    <>
+      <Modal
+        opened={opened}
+        onClose={close}
+             title="🎉Congratulations!"
+             // centered
+        fullScreen
+        radius={0}
+        transitionProps={{ transition: 'fade', duration: 200 }}
+      >
+        <p>asdasdasd</p>
+      </Modal>
+      <div>
 
-
-      {error && (
-        <Text size="sm" ta="center" mt="sm" fw="400" c="red">
-          {error}
-        </Text>
-      )}
-
-      {previewUrl && !isLoading && file && (
-        <div style={{position: 'relative'}}>
-          <CloseButton
-            style={{
-              position: 'absolute',
-              zIndex: 9999,
-              top: '-14px',
-              right: '-8px',
-              background: 'var(--mantine-color-body)',
-              border: '1px solid #ccc',
-              borderRadius: '100%',
-              cursor: 'pointer'
-            }}
-            aria-label="Cancel"
-            onClick={clearFile}
-            size="lg"
-            disabled={isLoading}
-
-          />
-          <Card withBorder shadow="sm" mt="18" radius="md" padding="0">
-            <Image src={previewUrl}/>
-          </Card>
-        </div>
-      )}
-
-
-      <LoadingOverlay
-        visible={isLoading}
-        loaderProps={{
-          children:
-            <Stack justify="center" align="center">
-              <RingLoader/>
-              <Text size="md" ta="center" fw="500">{loadingMessage}</Text>
+        <Button variant="default" onClick={open}>
+          Open modal
+        </Button>
+        <Group justify="center" style={{flexDirection: 'column'}} mt={24}>
+          {file ? (
+            <Stack>
+              <Title order={2} ta="center">{error ? 'Oops 😬' : 'Almost done!'}</Title>
+              {!error && (
+                <Button
+                  radius="xl"
+                  size="lg"
+                  color="green"
+                  onClick={processingReceipt}
+                  disabled={!file}
+                  variant="gradient"
+                  gradient={{from: 'blue', to: 'green', deg: 90}}
+                >
+                  Tap to earn points!
+                </Button>
+              )}
             </Stack>
-        }}
-        zIndex={1000}
-        overlayProps={{radius: 'sm', blur: 4}}
-      />
+          ) : (
+            <>
+              <Title order={2} ta="center">Receipt Uploader</Title>
+              <FileButton resetRef={resetRef} onChange={handleFileChange}>
+                {(props) => <Button
+                  variant="gradient"
+                  size="lg"
+                  gradient={{from: 'blue', to: 'green', deg: 90}} radius="xl" {...props}>
+                  Select Receipt Image
+                </Button>}
+              </FileButton>
+            </>
+          )}
+        </Group>
 
 
-      {/*{receiptData && !loading && (*/}
-      {/*  <Paper p="xs" mt="md" withBorder>*/}
-      {/*    <Text size="md" fw={500} mb="xs">Receipt Data:</Text>*/}
-      {/*    <Box style={{maxHeight: '300px', overflow: 'auto'}}>*/}
-      {/*      <Table withColumnBorders withTableBorder striped>*/}
-      {/*        {Object.entries(receiptData).map(([key, value]) => (*/}
-      {/*          <Table.Tr key={key}>*/}
-      {/*            <Table.Td><b>{key}</b></Table.Td>*/}
-      {/*            <Table.Td>*/}
-      {/*              {typeof value === 'object' && value !== null*/}
-      {/*                ? JSON.stringify(value, null, 2)*/}
-      {/*                : String(value)}*/}
-      {/*            </Table.Td>*/}
-      {/*          </Table.Tr>*/}
-      {/*        ))}*/}
-      {/*      </Table>*/}
-      {/*    </Box>*/}
-      {/*  </Paper>*/}
-      {/*)}*/}
-    </div>
+        {error && (
+          <Text size="sm" ta="center" mt="sm" fw="400" c="red">
+            {error}
+          </Text>
+        )}
+
+        {previewUrl && !isLoading && file && (
+          <div style={{position: 'relative'}}>
+            <CloseButton
+              style={{
+                position: 'absolute',
+                zIndex: 9999,
+                top: '-14px',
+                right: '-8px',
+                background: 'var(--mantine-color-body)',
+                border: '1px solid #ccc',
+                borderRadius: '100%',
+                cursor: 'pointer'
+              }}
+              aria-label="Cancel"
+              onClick={clearFile}
+              size="lg"
+              disabled={isLoading}
+
+            />
+            <Card withBorder shadow="sm" mt="18" radius="md" padding="0">
+              <Image src={previewUrl}/>
+            </Card>
+          </div>
+        )}
+
+
+        <LoadingOverlay
+          visible={isLoading}
+          loaderProps={{
+            children:
+              <Stack justify="center" align="center">
+                <RingLoader/>
+                <Text size="md" ta="center" fw="500">{loadingMessage}</Text>
+              </Stack>
+          }}
+          zIndex={1000}
+          overlayProps={{radius: 'sm', blur: 4}}
+        />
+
+
+        {/*{receiptData && !loading && (*/}
+        {/*  <Paper p="xs" mt="md" withBorder>*/}
+        {/*    <Text size="md" fw={500} mb="xs">Receipt Data:</Text>*/}
+        {/*    <Box style={{maxHeight: '300px', overflow: 'auto'}}>*/}
+        {/*      <Table withColumnBorders withTableBorder striped>*/}
+        {/*        {Object.entries(receiptData).map(([key, value]) => (*/}
+        {/*          <Table.Tr key={key}>*/}
+        {/*            <Table.Td><b>{key}</b></Table.Td>*/}
+        {/*            <Table.Td>*/}
+        {/*              {typeof value === 'object' && value !== null*/}
+        {/*                ? JSON.stringify(value, null, 2)*/}
+        {/*                : String(value)}*/}
+        {/*            </Table.Td>*/}
+        {/*          </Table.Tr>*/}
+        {/*        ))}*/}
+        {/*      </Table>*/}
+        {/*    </Box>*/}
+        {/*  </Paper>*/}
+        {/*)}*/}
+      </div>
+    </>
   )
 }
