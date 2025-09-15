@@ -11,6 +11,7 @@ export const SplashScreen = () => {
   const [isValid, setIsValid] = useState<boolean | null>(null);
   const [progress, setProgress] = useState(0);
   const [apiAnswered, setApiAnswered] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const progressRef = useRef(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate()
@@ -45,7 +46,12 @@ export const SplashScreen = () => {
   useEffect(() => {
     if (!hasFetchedRef.current && user.id) {
       hasFetchedRef.current = true;
-      fetchUser(String(user.id));
+      try {
+        fetchUser(String(user.id))
+      } catch (e) {
+        // @ts-ignore
+        setError(e.message);
+      };
     }
   }, [user.id]);
 
@@ -88,6 +94,13 @@ export const SplashScreen = () => {
       <Text size="xl" fw={700} ta="center">
         Welcome to Cheeki App!
       </Text>
+
+      {error && (
+        <Text size="sm" ta="center" mt="sm" fw="400" c="red">
+          {error}
+        </Text>
+      )}
+
       <img src="/logo.png" alt="Logo" style={{width: '100px', margin: '0 auto'}}/>
       {progress !== 100 && (
         <Box w="100%" h="87.8px">
