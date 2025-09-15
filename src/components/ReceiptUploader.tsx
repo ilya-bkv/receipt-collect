@@ -196,25 +196,21 @@ export const ReceiptUploader = (props: Props) => {
   const processingReceipt = async () => {
     setIsLoading(true);
     try {
-      // Step 1: Parsing receipt
-      setLoadingMessage('Processing receipt...')
+      setLoadingMessage('🚀 Processing receipt...')
       const parsedReceiptData = await parseReceipt();
 
       if (!parsedReceiptData) {
         return;
       }
 
-      setLoadingMessage('👤 User data update');
+      setLoadingMessage('👤 User data updating...');
       await updateUserEntity(parsedReceiptData.id);
-      setLoadingMessage('✅ User data updated');
 
-      setLoadingMessage('🎉 All steps are successful! We go to the profile');
       navigate('/profile');
 
     } catch (error) {
       console.error('❌ Error when processing a receipt:', error);
-      // setError('There was an error when processing a receipt');
-      setError(JSON.stringify(error));
+      setError('There was an error when processing a receipt');
     } finally {
       setIsLoading(false);
     }

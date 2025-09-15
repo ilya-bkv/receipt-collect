@@ -24,13 +24,13 @@ export const SplashScreen = () => {
 
   const user = useUserStore(useShallow((state) => ({
     id: state.id,
-    nicName: state.nicName ?? 'there',
+    nicName: state.nicName ?? 'there'
   })));
 
   const hasFetchedRef = useRef(false);
   const fetchUser = async (userId: string) => {
     try {
-      const resp = await axios.post(`${apiUrlProxy}/login`, { id: userId });
+      const resp = await axios.post(`${apiUrlProxy}/login`, {id: userId});
       setError(JSON.stringify(resp.data));
       updateUser({
         goals: resp.data.goals,
@@ -46,12 +46,7 @@ export const SplashScreen = () => {
   useEffect(() => {
     if (!hasFetchedRef.current && user.id) {
       hasFetchedRef.current = true;
-      try {
-        fetchUser(String(user.id))
-      } catch (e) {
-        // @ts-ignore
-        setError(e.message);
-      }
+      fetchUser(String(user.id))
     }
   }, [user.id]);
 
