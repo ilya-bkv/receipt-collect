@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { type FC } from 'react';
 import {
   Container,
   Stack,
@@ -22,7 +22,6 @@ import { useDisclosure } from '@mantine/hooks';
 
 
 export const UserProfile: FC = () => {
-    const [count, setCount] = useState(0);
     const [tonConnectUI] = useTonConnectUI();
     const userFriendlyAddress = useTonAddress();
     const [opened, {open, close}] = useDisclosure(false);
@@ -106,7 +105,6 @@ export const UserProfile: FC = () => {
                 size="lg"
                 color="blue"
                 src={user.avatar}
-                onClick={() => setCount(prevState => prevState + 1)}
               />
               <Text
                 size="xl"
@@ -155,8 +153,6 @@ export const UserProfile: FC = () => {
             </Stack>
           </Stack>
         </Paper>
-        {count === 5 && (
-
           <Blockquote color="red" cite="DANGER ZONE" mt="xl">
             <Stack my="14">
               <Button
@@ -183,7 +179,7 @@ export const UserProfile: FC = () => {
               </Button>
             </Stack>
           </Blockquote>
-        )}
+
         <Modal
           overlayProps={{
             backgroundOpacity: 0.55,
