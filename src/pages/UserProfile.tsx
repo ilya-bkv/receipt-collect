@@ -58,6 +58,14 @@ export const UserProfile: FC = () => {
       }
     };
 
+    const handleDisconnect = async () => {
+      try {
+        await tonConnectUI.disconnect();
+      } catch (error) {
+        console.error('Ton disconnect error:', error);
+      }
+    };
+
     const claimRewards = async () => {
       console.log('!!! tonConnectUI.connected:', tonConnectUI.connected)
       if (!tonConnectUI.connected) {
@@ -115,6 +123,12 @@ export const UserProfile: FC = () => {
                 <Group>
                   <Text>TON Wallet:</Text>
                   <Text fw={600}>{shortenAddress(userFriendlyAddress)}</Text>
+                  <Button
+                    onClick={handleDisconnect}
+                    size="xs" radius="xl" variant="outline"
+                  >
+                    Disconnect
+                  </Button>
                 </Group>
               )}
               <Group>
