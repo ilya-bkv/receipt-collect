@@ -22,6 +22,7 @@ import { RingLoader } from './RingLoader.tsx';
 import { useDisclosure } from '@mantine/hooks';
 import type { ParsedReceipt } from '../types/parsedReceipt.ts';
 import { IconCircleCheck } from '@tabler/icons-react';
+import { useReward } from 'react-rewards';
 
 type Props = {
   clearReceiptData: boolean;
@@ -38,6 +39,13 @@ export const ReceiptUploader = (props: Props) => {
 
   const resetRef = useRef<() => void>(null);
   const navigate = useNavigate();
+  const {reward} = useReward('rewardId', 'confetti', {
+    zIndex: 10002,
+    elementSize: 16,
+    lifetime: 340,
+    elementCount: 100
+  });
+
   const [opened, {open, close}] = useDisclosure(false);
   const user = useUserStore(useShallow((state) => ({
     id: state.id,
@@ -194,12 +202,12 @@ export const ReceiptUploader = (props: Props) => {
     console.log('%c!!! setReceiptData:', 'color: #bada55', receiptData?.merchantAddress.data)
   }, [receiptData]);
 
-  const updateUserEntity = async (receiptId: string) => {
+  const updateUserEntity = async (receiptId: string, goals: number) => {
     try {
       // Update user in database
       const updateUserDb = await axios.post(`${apiUrlProxy}/credit-user`, {
         userId: user.id,
-        goals: user.goals + 10,
+        goals: user.goals + goals,
         receiptId: receiptId
       });
 
@@ -224,8 +232,15 @@ export const ReceiptUploader = (props: Props) => {
       }
 
       setLoadingMessage('👤 User data updating...');
-      await updateUserEntity(parsedReceiptData.id);
-      open();
+
+      const newGoals = receiptData?.entities?.productLineItems
+        ? receiptData?.entities?.productLineItems.length + 10
+        : 10;
+
+      await updateUserEntity(parsedReceiptData.id, newGoals);
+      clearFile()
+      open()
+      reward()
     } catch (error) {
       console.error('❌ Error when processing a receipt:', error);
       setError('There was an error when processing a receipt');
@@ -234,10 +249,9 @@ export const ReceiptUploader = (props: Props) => {
     }
   }
 
-
   return (
     <div>
-      <Button onClick={open}>asd</Button>
+      <span id="rewardId"/>
       <Modal
         overlayProps={{
           backgroundOpacity: 0.55,
@@ -251,7 +265,7 @@ export const ReceiptUploader = (props: Props) => {
         }}
         yOffset="1vh"
         title="🎉 Congratulations!" centered
-        >
+      >
         <List
           spacing="md"
           size="sm"

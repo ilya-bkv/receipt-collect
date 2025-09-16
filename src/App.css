@@ -23,6 +23,7 @@ body {
 }
 .mantine-Modal-inner {
   left: 0;
+  z-index: 10001;
 }
 .mantine-Modal-title {
   font-size: large;
