@@ -1,5 +1,16 @@
 import { useState, type FC } from 'react';
-import { Container, Stack, Text, Paper, Group, Avatar, Divider, Button, Blockquote } from '@mantine/core';
+import {
+  Container,
+  Stack,
+  Text,
+  Paper,
+  Group,
+  Avatar,
+  Divider,
+  Button,
+  Blockquote,
+  Modal
+} from '@mantine/core';
 import useTelegramBackButton from '../hooks/useBackButton.tsx';
 import { useUserStore } from '../stores/useUserStore.ts';
 import { useShallow } from 'zustand/react/shallow';
@@ -7,12 +18,14 @@ import axios from 'axios';
 import { apiUrlProxy } from '../utils/apiUrlProxy.ts';
 import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
 import { shortenAddress } from '../utils/shortenAddress.ts';
+import { useDisclosure } from '@mantine/hooks';
 
 
 export const UserProfile: FC = () => {
     const [count, setCount] = useState(0);
     const [tonConnectUI] = useTonConnectUI();
     const userFriendlyAddress = useTonAddress();
+    const [opened, {open, close}] = useDisclosure(false);
 
     const user = useUserStore(useShallow((state) => ({
       id: state.id,
@@ -67,7 +80,6 @@ export const UserProfile: FC = () => {
     };
 
     const claimRewards = async () => {
-      console.log('!!! tonConnectUI.connected:', tonConnectUI.connected)
       if (!tonConnectUI.connected) {
         try {
           await tonConnectUI.openModal();
@@ -75,14 +87,12 @@ export const UserProfile: FC = () => {
           console.error('Ton connect error:', error);
         }
       }
-      if (user.goals > 1000) {
-        console.log('!!! COMING SOON:')
-        return
-      } else {
-        console.log('!!! COLLECT PIONTS:')
+
+      if (tonConnectUI.connected) {
+        open();
+        return;
       }
     }
-
 
     return (
       <Container size="sm" py="xl" style={{minWidth: '100vw'}}>
@@ -174,6 +184,27 @@ export const UserProfile: FC = () => {
             </Stack>
           </Blockquote>
         )}
+        <Modal
+          overlayProps={{
+            backgroundOpacity: 0.55,
+            blur: 3
+          }}
+          opened={opened}
+          radius="lg"
+          onClose={close}
+          yOffset="1vh"
+          centered
+          title={user.goals >= 1000 ? '📣 Coming soon!': '🎉 Unlock Your Rewards!'}
+        >
+          {user.goals >= 1000 ?
+            <Text>
+              Withdraw to crypto coming soon — get ready to cash out in the most convenient way!
+            </Text>
+            :
+            <Text>You can cash out your points once you reach <b>1,000</b>. Keep going — every purchase brings you closer to your
+              reward!</Text>
+          }
+        </Modal>
       </Container>
     );
   }
