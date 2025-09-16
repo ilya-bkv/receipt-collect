@@ -213,7 +213,7 @@ export const ReceiptUploader = (props: Props) => {
 
       // Update user in local store
       const {addReceipt, addGoals} = useUserStore.getState();
-      addGoals(10);
+      addGoals(goals);
       addReceipt(receiptId);
       console.log('%c!!! UPDATE USER:', 'color: #bada55', updateUserDb.data);
     } catch (error) {

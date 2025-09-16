@@ -1,16 +1,14 @@
-import { type FC } from 'react';
+import { useState, type FC } from 'react';
 import { Container, Stack, Text, Paper, Group, Avatar, Divider, Button, Blockquote } from '@mantine/core';
 import useTelegramBackButton from '../hooks/useBackButton.tsx';
 import { useUserStore } from '../stores/useUserStore.ts';
 import { useShallow } from 'zustand/react/shallow';
 import axios from 'axios';
 import { apiUrlProxy } from '../utils/apiUrlProxy.ts';
-import { useLocation } from 'react-router';
 
 export const UserProfile: FC = () => {
+  const [count, setCount] = useState(0);
 
-  const location = useLocation();
-  console.log(location.state);
 
   const user = useUserStore(useShallow((state) => ({
     id: state.id,
@@ -63,7 +61,14 @@ export const UserProfile: FC = () => {
       <Paper shadow="sm" radius="md" withBorder p="md">
         <Stack>
           <Group>
-            <Avatar variant="outline" radius="xl" size="lg" color="blue" src={user.avatar}/>
+            <Avatar
+              variant="outline"
+              radius="xl"
+              size="lg"
+              color="blue"
+              src={user.avatar}
+              onClick={() => setCount(prevState => prevState + 1)}
+            />
             <Text
               size="xl"
               fw={900}
@@ -93,32 +98,35 @@ export const UserProfile: FC = () => {
           </Stack>
         </Stack>
       </Paper>
-      <Blockquote color="red" cite="DANGER ZONE" mt="xl">
-        <Stack my="14">
-          <Button
-            size="md"
-            color="blue"
-            variant="outline"
-            onClick={getUserReceipts}
-          >
-            Get User Info
-          </Button>
-          <Button
-            size="md"
-            color="red"
-            onClick={resetUserReceipts}
-          >
-            Reset user
-          </Button>
-          <Button
-            size="md"
-            color="red"
-            onClick={resetAllReceipts}
-          >
-            Reset all receipts
-          </Button>
-        </Stack>
-      </Blockquote>
+      {count === 5 && (
+
+        <Blockquote color="red" cite="DANGER ZONE" mt="xl">
+          <Stack my="14">
+            <Button
+              size="md"
+              color="blue"
+              variant="outline"
+              onClick={getUserReceipts}
+            >
+              Get User Info
+            </Button>
+            <Button
+              size="md"
+              color="red"
+              onClick={resetUserReceipts}
+            >
+              Reset user
+            </Button>
+            <Button
+              size="md"
+              color="red"
+              onClick={resetAllReceipts}
+            >
+              Reset all receipts
+            </Button>
+          </Stack>
+        </Blockquote>
+      )}
     </Container>
   );
 };
