@@ -1,5 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Card, CloseButton, FileButton, Group, Image, LoadingOverlay, Stack, Text, Title, Modal } from '@mantine/core';
+import {
+  Button,
+  Card,
+  CloseButton,
+  FileButton,
+  Group,
+  Image,
+  List,
+  LoadingOverlay, Modal,
+  Stack,
+  Text, ThemeIcon,
+  Title
+} from '@mantine/core';
 import axios from 'axios';
 import { apiUrlProxy } from '../utils/apiUrlProxy.ts';
 import { useUserStore } from '../stores/useUserStore.ts';
@@ -8,6 +20,8 @@ import { useNavigate } from 'react-router';
 import { composeReceiptId } from '../utils/composeReceiptId.ts';
 import { RingLoader } from './RingLoader.tsx';
 import { useDisclosure } from '@mantine/hooks';
+import type { ParsedReceipt } from '../types/parsedReceipt.ts';
+import { IconCircleCheck } from '@tabler/icons-react';
 
 type Props = {
   clearReceiptData: boolean;
@@ -20,9 +34,11 @@ export const ReceiptUploader = (props: Props) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadingMessage, setLoadingMessage] = useState<string | undefined>();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [receiptData, setReceiptData] = useState<ParsedReceipt | null>(null);
 
   const resetRef = useRef<() => void>(null);
   const navigate = useNavigate();
+  const [opened, {open, close}] = useDisclosure(false);
   const user = useUserStore(useShallow((state) => ({
     id: state.id,
     goals: state.goals,
@@ -108,7 +124,7 @@ export const ReceiptUploader = (props: Props) => {
     resetRef.current?.();
   };
 
-  const parseReceipt = async () => {
+  const parseReceipt = async (): Promise<ParsedReceipt | undefined> => {
     if (!file) {
       setError('Please select a file first');
       return
@@ -170,24 +186,31 @@ export const ReceiptUploader = (props: Props) => {
       setError('Network error while saving receipt');
       return;
     }
-
+    setReceiptData(data);
     return data;
   };
 
+  useEffect(() => {
+    console.log('%c!!! setReceiptData:', 'color: #bada55', receiptData?.merchantAddress.data)
+  }, [receiptData]);
+
   const updateUserEntity = async (receiptId: string) => {
+    try {
+      // Update user in database
+      const updateUserDb = await axios.post(`${apiUrlProxy}/credit-user`, {
+        userId: user.id,
+        goals: user.goals + 10,
+        receiptId: receiptId
+      });
 
-    // Update user in database
-    const updateUserDb = await axios.post(`${apiUrlProxy}/credit-user`, {
-      userId: user.id,
-      goals: user.goals + 10,
-      receiptId: receiptId
-    });
-
-    // Update user in local store
-    const {addReceipt, addGoals} = useUserStore.getState();
-    addGoals(10);
-    addReceipt(receiptId);
-    console.log('%c!!! UPDATE USER:', 'color: #bada55', updateUserDb.data);
+      // Update user in local store
+      const {addReceipt, addGoals} = useUserStore.getState();
+      addGoals(10);
+      addReceipt(receiptId);
+      console.log('%c!!! UPDATE USER:', 'color: #bada55', updateUserDb.data);
+    } catch (error) {
+      console.error('Error updating user entity:', error);
+    }
   }
 
   const processingReceipt = async () => {
@@ -202,15 +225,7 @@ export const ReceiptUploader = (props: Props) => {
 
       setLoadingMessage('👤 User data updating...');
       await updateUserEntity(parsedReceiptData.id);
-
-      navigate('/profile', {
-        state: {
-           goals: parsedReceiptData.goals,
-           receiptEntity: 1,
-
-        }
-      });
-
+      open();
     } catch (error) {
       console.error('❌ Error when processing a receipt:', error);
       setError('There was an error when processing a receipt');
@@ -218,134 +233,160 @@ export const ReceiptUploader = (props: Props) => {
       setIsLoading(false);
     }
   }
-  const [opened, { open, close }] = useDisclosure(false);
-
-  // Модалка:
-  // Вы загрузили чек из дубая (показать что парсим адрес)
-  // Общая сумма чека N
-  // Кол-во найденных товаров в чеке.
-  // Мы вам начислили такое-то количество баллов за чек и за кол-во найденных товаров и
-  // 5 баллов за найденный адрес торговой точки
 
 
   return (
-    <>
+    <div>
+      <Button onClick={open}>asd</Button>
       <Modal
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 3
+        }}
         opened={opened}
-        onClose={close}
-             title="🎉Congratulations!"
-             // centered
-        fullScreen
-        radius={0}
-        transitionProps={{ transition: 'fade', duration: 200 }}
-      >
-        <p>asdasdasd</p>
-      </Modal>
-      <div>
-
-        <Button variant="default" onClick={open}>
-          Open modal
-        </Button>
-        <Group justify="center" style={{flexDirection: 'column'}} mt={24}>
-          {file ? (
-            <Stack>
-              <Title order={2} ta="center">{error ? 'Oops 😬' : 'Almost done!'}</Title>
-              {!error && (
-                <Button
-                  radius="xl"
-                  size="lg"
-                  color="green"
-                  onClick={processingReceipt}
-                  disabled={!file}
-                  variant="gradient"
-                  gradient={{from: 'blue', to: 'green', deg: 90}}
-                >
-                  Tap to earn points!
-                </Button>
-              )}
-            </Stack>
-          ) : (
-            <>
-              <Title order={2} ta="center">Receipt Uploader</Title>
-              <FileButton resetRef={resetRef} onChange={handleFileChange}>
-                {(props) => <Button
-                  variant="gradient"
-                  size="lg"
-                  gradient={{from: 'blue', to: 'green', deg: 90}} radius="xl" {...props}>
-                  Select Receipt Image
-                </Button>}
-              </FileButton>
-            </>
+        radius="lg"
+        onClose={() => {
+          close()
+          navigate('/profile')
+        }}
+        yOffset="1vh"
+        title="🎉 Congratulations!" centered
+        >
+        <List
+          spacing="md"
+          size="sm"
+          icon={
+            <ThemeIcon color="teal" size={24} radius="xl">
+              <IconCircleCheck size={16}/>
+            </ThemeIcon>
+          }
+        >
+          {receiptData?.merchantAddress.data && (
+            <List.Item>
+              You uploaded a receipt from:&nbsp;<b>{receiptData?.merchantAddress.data}</b>
+            </List.Item>
           )}
-        </Group>
+          {receiptData?.totalAmount.data && (
+            <List.Item>Total receipt amount:&nbsp;
+              <b>{receiptData.totalAmount?.data}&nbsp;
+                {receiptData.totalAmount.currencyCode && (<small>{receiptData.totalAmount.currencyCode}</small>)}</b>
+            </List.Item>
+          )}
+          {receiptData?.entities?.productLineItems && (
+            <List.Item>Number of items found in the
+              receipt: <b>{receiptData?.entities?.productLineItems.length}</b></List.Item>
+          )}
 
+          <List.Item>
+            We credited you with <b>10 points</b> for the receipt and{' '}
+            <b>{receiptData?.entities?.productLineItems?.length
+              ? 5 * receiptData.entities.productLineItems.length
+              : 0}</b>{' '}
+            for the number of items found
+          </List.Item>
+        </List>
+      </Modal>
 
-        {error && (
-          <Text size="sm" ta="center" mt="sm" fw="400" c="red">
-            {error}
-          </Text>
+      <Group justify="center" style={{flexDirection: 'column'}} mt={24}>
+        {file ? (
+          <Stack>
+            <Title order={2} ta="center">{error ? 'Oops 😬' : 'Almost done!'}</Title>
+            {!error && (
+              <Button
+                radius="xl"
+                size="lg"
+                color="green"
+                onClick={processingReceipt}
+                disabled={!file}
+                variant="gradient"
+                gradient={{from: 'blue', to: 'green', deg: 90}}
+              >
+                Tap to earn points!
+              </Button>
+            )}
+          </Stack>
+        ) : (
+          <>
+            <Title order={2} ta="center">Receipt Uploader</Title>
+            <FileButton resetRef={resetRef} onChange={handleFileChange}>
+              {(props) => <Button
+                variant="gradient"
+                size="lg"
+                gradient={{from: 'blue', to: 'green', deg: 90}} radius="xl" {...props}>
+                Select Receipt Image
+              </Button>}
+            </FileButton>
+          </>
         )}
-
-        {previewUrl && !isLoading && file && (
-          <div style={{position: 'relative'}}>
-            <CloseButton
-              style={{
-                position: 'absolute',
-                zIndex: 9999,
-                top: '-14px',
-                right: '-8px',
-                background: 'var(--mantine-color-body)',
-                border: '1px solid #ccc',
-                borderRadius: '100%',
-                cursor: 'pointer'
-              }}
-              aria-label="Cancel"
-              onClick={clearFile}
-              size="lg"
-              disabled={isLoading}
-
-            />
-            <Card withBorder shadow="sm" mt="18" radius="md" padding="0">
-              <Image src={previewUrl}/>
-            </Card>
-          </div>
-        )}
+      </Group>
 
 
-        <LoadingOverlay
-          visible={isLoading}
-          loaderProps={{
-            children:
-              <Stack justify="center" align="center">
-                <RingLoader/>
-                <Text size="md" ta="center" fw="500">{loadingMessage}</Text>
-              </Stack>
-          }}
-          zIndex={1000}
-          overlayProps={{radius: 'sm', blur: 4}}
-        />
+      {error && (
+        <Text size="sm" ta="center" mt="sm" fw="400" c="red">
+          {error}
+        </Text>
+      )}
+
+      {previewUrl && !isLoading && file && (
+        <div style={{position: 'relative'}}>
+          <CloseButton
+            style={{
+              position: 'absolute',
+              zIndex: 9999,
+              top: '-14px',
+              right: '-8px',
+              background: 'var(--mantine-color-body)',
+              border: '1px solid #ccc',
+              borderRadius: '100%',
+              cursor: 'pointer'
+            }}
+            aria-label="Cancel"
+            onClick={clearFile}
+            size="lg"
+            disabled={isLoading}
+
+          />
+          <Card withBorder shadow="sm" mt="18" radius="md" padding="0">
+            <Image src={previewUrl}/>
+          </Card>
+        </div>
+      )}
 
 
-        {/*{receiptData && !loading && (*/}
-        {/*  <Paper p="xs" mt="md" withBorder>*/}
-        {/*    <Text size="md" fw={500} mb="xs">Receipt Data:</Text>*/}
-        {/*    <Box style={{maxHeight: '300px', overflow: 'auto'}}>*/}
-        {/*      <Table withColumnBorders withTableBorder striped>*/}
-        {/*        {Object.entries(receiptData).map(([key, value]) => (*/}
-        {/*          <Table.Tr key={key}>*/}
-        {/*            <Table.Td><b>{key}</b></Table.Td>*/}
-        {/*            <Table.Td>*/}
-        {/*              {typeof value === 'object' && value !== null*/}
-        {/*                ? JSON.stringify(value, null, 2)*/}
-        {/*                : String(value)}*/}
-        {/*            </Table.Td>*/}
-        {/*          </Table.Tr>*/}
-        {/*        ))}*/}
-        {/*      </Table>*/}
-        {/*    </Box>*/}
-        {/*  </Paper>*/}
-        {/*)}*/}
-      </div>
-    </>
+      <LoadingOverlay
+        visible={isLoading}
+        loaderProps={{
+          children:
+            <Stack justify="center" align="center">
+              <RingLoader/>
+              <Text size="md" ta="center" fw="500">{loadingMessage}</Text>
+            </Stack>
+        }}
+        zIndex={1000}
+        overlayProps={{radius: 'sm', blur: 4}}
+      />
+
+
+      {/*{receiptData && !loading && (*/}
+      {/*  <Paper p="xs" mt="md" withBorder>*/}
+      {/*    <Text size="md" fw={500} mb="xs">Receipt Data:</Text>*/}
+      {/*    <Box style={{maxHeight: '300px', overflow: 'auto'}}>*/}
+      {/*      <Table withColumnBorders withTableBorder striped>*/}
+      {/*        {Object.entries(receiptData).map(([key, value]) => (*/}
+      {/*          <Table.Tr key={key}>*/}
+      {/*            <Table.Td><b>{key}</b></Table.Td>*/}
+      {/*            <Table.Td>*/}
+      {/*              {typeof value === 'object' && value !== null*/}
+      {/*                ? JSON.stringify(value, null, 2)*/}
+      {/*                : String(value)}*/}
+      {/*            </Table.Td>*/}
+      {/*          </Table.Tr>*/}
+      {/*        ))}*/}
+      {/*      </Table>*/}
+      {/*    </Box>*/}
+      {/*  </Paper>*/}
+      {/*)}*/}
+    </div>
+
   )
 }

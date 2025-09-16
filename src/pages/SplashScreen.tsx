@@ -11,7 +11,6 @@ export const SplashScreen = () => {
   const [isValid, setIsValid] = useState<boolean | null>(null);
   const [progress, setProgress] = useState(0);
   const [apiAnswered, setApiAnswered] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const progressRef = useRef(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate()
@@ -31,7 +30,6 @@ export const SplashScreen = () => {
   const fetchUser = async (userId: string) => {
     try {
       const resp = await axios.post(`${apiUrlProxy}/login`, {id: userId});
-      setError(JSON.stringify(resp.data));
       updateUser({
         goals: resp.data.goals,
         receipts: resp.data.receipts
@@ -89,12 +87,6 @@ export const SplashScreen = () => {
       <Text size="xl" fw={700} ta="center">
         Welcome to Cheeki App!
       </Text>
-
-      {error && (
-        <Text size="sm" ta="center" mt="sm" fw="400" c="red">
-          {error}
-        </Text>
-      )}
 
       <img src="/logo.png" alt="Logo" style={{width: '100px', margin: '0 auto'}}/>
       {progress !== 100 && (

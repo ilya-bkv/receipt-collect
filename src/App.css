@@ -2,6 +2,11 @@
   max-width: 1280px;
   margin: 0 auto;
   text-align: center;
+  display: flex
+}
+
+body {
+  display: flex
 }
 
 .sticky-header {
@@ -10,4 +15,20 @@
   left: 0;
   background: rgba(255,255,255, 0.1);
   backdrop-filter: blur(2px);
+}
+
+/* Modal styles to ensure proper positioning */
+.mantine-Modal-overlay {
+  z-index: 10000;
+}
+.mantine-Modal-inner {
+  left: 0;
+}
+.mantine-Modal-title {
+  font-size: large;
+  font-weight: 800;
+}
+
+.mantine-List-itemWrapper {
+  align-items: flex-start;
 }

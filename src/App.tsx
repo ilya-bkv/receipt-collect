@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 import { useUserStore } from './stores/useUserStore';
 import { useShallow } from 'zustand/react/shallow';
 
+
 function App() {
   const tg = Telegram.WebApp;
   const {updateUser} = useUserStore(
